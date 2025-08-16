@@ -3,6 +3,26 @@ import { useState, useEffect, useCallback } from 'react';
 import { VideoAsset, Category, CategoryType, PerformanceBatch } from '../types';
 import { supabase } from '../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
+import { Database } from '../lib/database.types';
+
+// Mapper to convert snake_case from Supabase to camelCase for the app
+const mapSupabaseVideoToAsset = (video: Database['public']['Tables']['videos']['Row']): VideoAsset => ({
+  id: video.id,
+  created_at: video.created_at,
+  userId: video.user_id,
+  filePath: video.file_path,
+  actorName: video.actor_name,
+  movementType: video.movement_type,
+  performanceActor: video.performance_actor,
+  takeNumber: video.take_number,
+  videoUrl: video.video_url,
+  thumbnailUrl: video.thumbnail_url ?? undefined,
+  tags: video.tags || [],
+  resolution: video.resolution as { width: number, height: number },
+  fileSize: video.file_size,
+  isFavorite: video.is_favorite,
+});
+
 
 export const useAppData = (userId?: string) => {
   const [assets, setAssets] = useState<VideoAsset[]>([]);
@@ -28,7 +48,7 @@ export const useAppData = (userId?: string) => {
         .order('name', { ascending: true });
       if (categoriesError) throw categoriesError;
 
-      setAssets(videosData.map(v => ({...v, tags: v.tags || []})) as VideoAsset[]);
+      setAssets(videosData.map(mapSupabaseVideoToAsset));
       setCategories(categoriesData as Category[]);
 
     } catch (error) {
@@ -49,13 +69,11 @@ export const useAppData = (userId?: string) => {
     if (!userId) return;
     setLoading(true);
     try {
-        const allNewAssets: Omit<VideoAsset, 'id' | 'created_at' | 'userId' | 'videoUrl' | 'thumbnailUrl'>[] = [];
+        const allNewAssets: Omit<VideoAsset, 'id' | 'created_at' | 'videoUrl' | 'thumbnailUrl'>[] = [];
         const allFilesToUpload: { file: File, path: string }[] = [];
         
-        // Use a Map to collect and deduplicate new categories. Key: "type-name"
         const newCategories = new Map<string, Omit<Category, 'id'>>();
 
-        // Create a lookup map of existing categories for efficient checking.
         const existingCategoryMap = {
             actors: new Set(categories.filter(c => c.type === 'actors').map(c => c.name)),
             movements: new Set(categories.filter(c => c.type === 'movements').map(c => c.name)),
@@ -74,18 +92,16 @@ export const useAppData = (userId?: string) => {
         for (const batch of batches) {
             const source = batch.sourceFile;
 
-            // Collect new categories from source file
             addCategoryIfNeeded(source.performanceActor, 'performanceActors');
             addCategoryIfNeeded(source.movementType, 'movements');
-            // A performance actor is also an actor, so add to actors list as well
             addCategoryIfNeeded(source.performanceActor, 'actors');
 
-            // Prepare source file for upload
             const sourceFilePath = `${userId}/${uuidv4()}-${source.file.name}`;
             allFilesToUpload.push({ file: source.file, path: sourceFilePath });
             allNewAssets.push({
+                userId,
                 filePath: sourceFilePath,
-                actorName: source.performanceActor, // Source video is performed by the performance actor
+                actorName: source.performanceActor,
                 movementType: source.movementType,
                 performanceActor: source.performanceActor,
                 takeNumber: source.takeNumber,
@@ -95,17 +111,15 @@ export const useAppData = (userId?: string) => {
                 isFavorite: false,
             });
 
-            // Process result files
             for (const result of batch.resultFiles) {
-                // Collect new actor category from result file
                 addCategoryIfNeeded(result.actorName, 'actors');
                 
-                // Prepare result file for upload
                 const resultFilePath = `${userId}/${uuidv4()}-${result.file.name}`;
                 allFilesToUpload.push({ file: result.file, path: resultFilePath });
                 allNewAssets.push({
+                    userId,
                     filePath: resultFilePath,
-                    actorName: result.actorName, // Result video features the AI actor
+                    actorName: result.actorName,
                     movementType: source.movementType,
                     performanceActor: source.performanceActor,
                     takeNumber: source.takeNumber,
@@ -117,27 +131,37 @@ export const useAppData = (userId?: string) => {
             }
         }
         
-        // 1. Insert any new categories into the database
         if (newCategories.size > 0) {
             const categoriesToInsert = Array.from(newCategories.values());
-            const { error: catError } = await supabase.from('categories').insert(categoriesToInsert);
+            const { error: catError } = await supabase.from('categories').insert(categoriesToInsert as any);
             if (catError) throw catError;
         }
 
-        // 2. Upload all video files to storage
         await Promise.all(allFilesToUpload.map(({ file, path }) => supabase.storage.from('videos').upload(path, file)));
         
-        // 3. Get public URLs for all uploaded videos
         const assetsWithUrls = await Promise.all(allNewAssets.map(async (asset) => {
             const { data } = supabase.storage.from('videos').getPublicUrl(asset.filePath);
-            return { ...asset, videoUrl: data.publicUrl, userId };
+            return { ...asset, videoUrl: data.publicUrl };
+        }));
+        
+        // Mapper to convert camelCase from the app to snake_case for Supabase
+        const assetsToInsert = assetsWithUrls.map(asset => ({
+            user_id: asset.userId,
+            file_path: asset.filePath,
+            actor_name: asset.actorName,
+            movement_type: asset.movementType,
+            performance_actor: asset.performanceActor,
+            take_number: asset.takeNumber,
+            video_url: asset.videoUrl,
+            tags: asset.tags,
+            resolution: asset.resolution,
+            file_size: asset.fileSize,
+            is_favorite: asset.isFavorite,
         }));
 
-        // 4. Insert all asset metadata into the 'videos' table
-        const { error: insertError } = await supabase.from('videos').insert(assetsWithUrls);
+        const { error: insertError } = await supabase.from('videos').insert(assetsToInsert);
         if (insertError) throw insertError;
         
-        // 5. Refresh all data to show new assets and categories
         await fetchAllData();
     } catch (error) {
         console.error("Error during upload process:", error);
@@ -187,9 +211,19 @@ export const useAppData = (userId?: string) => {
 
   const updateAsset = useCallback(async (updatedAsset: VideoAsset) => {
     try {
-        const { id, videoUrl, ...updateData } = updatedAsset;
+        const { id, ...updateData } = updatedAsset;
         setAssets(prev => prev.map(a => a.id === id ? updatedAsset : a));
-        const { error } = await supabase.from('videos').update(updateData).eq('id', id);
+
+        const supabaseUpdateData = {
+          actor_name: updateData.actorName,
+          movement_type: updateData.movementType,
+          performance_actor: updateData.performanceActor,
+          take_number: updateData.takeNumber,
+          tags: updateData.tags,
+          is_favorite: updateData.isFavorite,
+        };
+
+        const { error } = await supabase.from('videos').update(supabaseUpdateData).eq('id', id);
         if (error) throw error;
     } catch(error) {
         console.error("Error updating asset:", error);
@@ -205,7 +239,7 @@ export const useAppData = (userId?: string) => {
     
     const { error } = await supabase
       .from('videos')
-      .update({ isFavorite: !asset.isFavorite })
+      .update({ is_favorite: !asset.isFavorite })
       .eq('id', assetId);
 
     if (error) {
@@ -240,13 +274,13 @@ export const useAppData = (userId?: string) => {
         const { error: catError } = await supabase.from('categories').update({ name: newName }).eq('id', categoryToRename.id);
         if (catError) throw catError;
 
-        const keyMap: Record<CategoryType, 'actorName' | 'movementType' | 'performanceActor'> = {
-            actors: 'actorName', movements: 'movementType', performanceActors: 'performanceActor'
+        const keyMap: Record<CategoryType, 'actor_name' | 'movement_type' | 'performance_actor'> = {
+            actors: 'actor_name', movements: 'movement_type', performanceActors: 'performance_actor'
         };
         const assetKey = keyMap[categoryToRename.type];
         if (assetKey) {
           const updatePayload = { [assetKey]: newName };
-          const { error: assetError } = await supabase.from('videos').update(updatePayload).eq(assetKey, categoryToRename.name);
+          const { error: assetError } = await supabase.from('videos').update(updatePayload as any).eq(assetKey, categoryToRename.name);
           if (assetError) throw assetError;
         }
         
@@ -261,13 +295,13 @@ export const useAppData = (userId?: string) => {
         const { error } = await supabase.from('categories').delete().eq('id', categoryToDelete.id);
         if (error) throw error;
 
-        const keyMap: Record<CategoryType, 'actorName' | 'movementType' | 'performanceActor'> = {
-            actors: 'actorName', movements: 'movementType', performanceActors: 'performanceActor'
+        const keyMap: Record<CategoryType, 'actor_name' | 'movement_type' | 'performance_actor'> = {
+            actors: 'actor_name', movements: 'movement_type', performanceActors: 'performance_actor'
         };
         const assetKey = keyMap[categoryToDelete.type];
         if (assetKey) {
           const updatePayload = { [assetKey]: 'Uncategorized' };
-          const { error: assetError } = await supabase.from('videos').update(updatePayload).eq(assetKey, categoryToDelete.name);
+          const { error: assetError } = await supabase.from('videos').update(updatePayload as any).eq(assetKey, categoryToDelete.name);
           if (assetError) throw assetError;
         }
         

@@ -1,3 +1,4 @@
+
 export type Json =
   | string
   | number
@@ -13,50 +14,50 @@ export interface Database {
         Row: {
           id: string
           created_at: string
-          userId: string
-          filePath: string
-          actorName: string
-          movementType: string
-          performanceActor: string
-          takeNumber: number
-          videoUrl: string
-          thumbnailUrl: string | null
+          user_id: string
+          file_path: string
+          actor_name: string
+          movement_type: string
+          performance_actor: string
+          take_number: number
+          video_url: string
+          thumbnail_url: string | null
           tags: string[] | null
-          resolution: Json
-          fileSize: string
-          isFavorite: boolean
+          resolution: { width: number, height: number }
+          file_size: string
+          is_favorite: boolean
         }
         Insert: {
           id?: string
           created_at?: string
-          userId: string
-          filePath: string
-          actorName: string
-          movementType: string
-          performanceActor: string
-          takeNumber: number
-          videoUrl: string
-          thumbnailUrl?: string | null
+          user_id: string
+          file_path: string
+          actor_name: string
+          movement_type: string
+          performance_actor: string
+          take_number: number
+          video_url: string
+          thumbnail_url?: string | null
           tags: string[]
-          resolution: Json
-          fileSize: string
-          isFavorite: boolean
+          resolution: { width: number, height: number }
+          file_size: string
+          is_favorite: boolean
         }
         Update: {
           id?: string
           created_at?: string
-          userId?: string
-          filePath?: string
-          actorName?: string
-          movementType?: string
-          performanceActor?: string
-          takeNumber?: number
-          videoUrl?: string
-          thumbnailUrl?: string | null
+          user_id?: string
+          file_path?: string
+          actor_name?: string
+          movement_type?: string
+          performance_actor?: string
+          take_number?: number
+          video_url?: string
+          thumbnail_url?: string | null
           tags?: string[]
-          resolution?: Json
-          fileSize?: string
-          isFavorite?: boolean
+          resolution?: { width: number, height: number }
+          file_size?: string
+          is_favorite?: boolean
         }
       }
       categories: {
