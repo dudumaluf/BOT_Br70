@@ -44,7 +44,7 @@ const App: React.FC = () => {
   const [gridSize, setGridSize] = useState(4);
   
   const [groupMode, setGroupMode] = useState<GroupMode>('none');
-  const [sortBy, setSortBy] = useState<SortBy>('dateAdded_desc');
+  const [sortBy, setSortBy] = useState<SortBy>('created_at_desc');
 
   const [appState, setAppState] = useState<AppState>('grid');
   const [previewLayout, setPreviewLayout] = useState<PreviewLayout>('grid');
@@ -140,10 +140,10 @@ const App: React.FC = () => {
       })
       .sort((a, b) => {
           switch(sortBy) {
-            case 'dateAdded_asc':
-                return new Date(a.dateAdded).getTime() - new Date(b.dateAdded).getTime();
-            case 'dateAdded_desc':
-                return new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime();
+            case 'created_at_asc':
+                return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+            case 'created_at_desc':
+                return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
             case 'actorName_asc':
                 return a.actorName.localeCompare(b.actorName);
             case 'actorName_desc':

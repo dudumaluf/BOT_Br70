@@ -63,21 +63,18 @@ export interface Database {
         Row: {
           id: number
           created_at: string
-          userId: string
           type: 'actors' | 'movements' | 'performanceActors'
           name: string
         }
         Insert: {
           id?: number
           created_at?: string
-          userId: string
           type: 'actors' | 'movements' | 'performanceActors'
           name: string
         }
         Update: {
           id?: number
           created_at?: string
-          userId?: string
           type?: 'actors' | 'movements' | 'performanceActors'
           name?: string
         }

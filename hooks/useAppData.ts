@@ -28,7 +28,7 @@ export const useAppData = (userId?: string) => {
         .order('name', { ascending: true });
       if (categoriesError) throw categoriesError;
 
-      setAssets(videosData.map(v => ({...v, dateAdded: v.created_at, tags: v.tags || []})) as VideoAsset[]);
+      setAssets(videosData.map(v => ({...v, tags: v.tags || []})) as VideoAsset[]);
       setCategories(categoriesData as Category[]);
 
     } catch (error) {
@@ -49,11 +49,11 @@ export const useAppData = (userId?: string) => {
     if (!userId) return;
     setLoading(true);
     try {
-        const allNewAssets: Omit<VideoAsset, 'id' | 'dateAdded' | 'userId' | 'videoUrl' | 'thumbnailUrl'>[] = [];
+        const allNewAssets: Omit<VideoAsset, 'id' | 'created_at' | 'userId' | 'videoUrl' | 'thumbnailUrl'>[] = [];
         const allFilesToUpload: { file: File, path: string }[] = [];
         
         // Use a Map to collect and deduplicate new categories. Key: "type-name"
-        const newCategories = new Map<string, Omit<Category, 'id' | 'userId'>>();
+        const newCategories = new Map<string, Omit<Category, 'id'>>();
 
         // Create a lookup map of existing categories for efficient checking.
         const existingCategoryMap = {
@@ -119,7 +119,7 @@ export const useAppData = (userId?: string) => {
         
         // 1. Insert any new categories into the database
         if (newCategories.size > 0) {
-            const categoriesToInsert = Array.from(newCategories.values()).map(cat => ({ ...cat, userId }));
+            const categoriesToInsert = Array.from(newCategories.values());
             const { error: catError } = await supabase.from('categories').insert(categoriesToInsert);
             if (catError) throw catError;
         }
@@ -187,7 +187,7 @@ export const useAppData = (userId?: string) => {
 
   const updateAsset = useCallback(async (updatedAsset: VideoAsset) => {
     try {
-        const { id, dateAdded, videoUrl, ...updateData } = updatedAsset;
+        const { id, videoUrl, ...updateData } = updatedAsset;
         setAssets(prev => prev.map(a => a.id === id ? updatedAsset : a));
         const { error } = await supabase.from('videos').update(updateData).eq('id', id);
         if (error) throw error;
@@ -218,7 +218,7 @@ export const useAppData = (userId?: string) => {
   const addCategoryItem = useCallback(async (category: CategoryType, name: string) => {
     if (!name || name.trim() === '' || !userId) return;
     try {
-        const { data, error } = await supabase.from('categories').insert({ type: category, name, userId }).select();
+        const { data, error } = await supabase.from('categories').insert({ type: category, name }).select();
         if (error) throw error;
         if (data) {
             setCategories(prev => [...prev, ...data as Category[]].sort((a,b) => a.name.localeCompare(b.name)));

@@ -10,14 +10,14 @@ export interface VideoAsset {
   videoUrl: string;
   thumbnailUrl?: string;
   tags: string[];
-  dateAdded: string;
+  created_at: string;
   resolution: { width: number; height: number };
   fileSize: string;
   isFavorite: boolean;
 }
 
 export type GroupMode = 'none' | 'actorName' | 'movementType' | 'performanceActor';
-export type SortBy = 'dateAdded_desc' | 'dateAdded_asc' | 'actorName_asc' | 'actorName_desc';
+export type SortBy = 'created_at_desc' | 'created_at_asc' | 'actorName_asc' | 'actorName_desc';
 
 export type AppState = 'grid' | 'preview';
 export type PreviewLayout = 'grid' | 'column' | 'row';
@@ -29,7 +29,7 @@ export type GroupedVideos = {
 
 export type Theme = 'light' | 'dark';
 export type CategoryType = 'actors' | 'movements' | 'performanceActors';
-export type Category = { id: number; type: CategoryType; name: string; userId?: string };
+export type Category = { id: number; type: CategoryType; name: string; };
 
 export interface Settings {
   autoplayOnHover: boolean;

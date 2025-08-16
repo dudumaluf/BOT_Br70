@@ -71,8 +71,8 @@ const GROUP_OPTIONS: { value: GroupMode, label: string, icon: React.ReactNode }[
 ];
 
 const SORT_OPTIONS: { value: SortBy, label: string }[] = [
-    { value: 'dateAdded_desc', label: 'Newest' },
-    { value: 'dateAdded_asc', label: 'Oldest' },
+    { value: 'created_at_desc', label: 'Newest' },
+    { value: 'created_at_asc', label: 'Oldest' },
     { value: 'actorName_asc', label: 'Actor A-Z' },
     { value: 'actorName_desc', label: 'Actor Z-A' },
 ];
