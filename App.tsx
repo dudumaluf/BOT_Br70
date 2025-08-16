@@ -22,7 +22,7 @@ const App: React.FC = () => {
   
   const { 
     assets, loading, addAssets, deleteAsset, updateAsset, deleteMultipleAssets, toggleFavorite,
-    categories, addCategoryItem, renameCategoryItem, deleteCategoryItem
+    categories, addCategoryItem, renameCategoryItem, deleteCategoryItem,
   } = useAppData(session?.user?.id);
 
   const actors = useMemo(() => categories.filter(c => c.type === 'actors').map(c => c.name), [categories]);
@@ -251,7 +251,6 @@ const App: React.FC = () => {
     });
     setIsConfirmationOpen(true);
   }, [deleteCategoryItem, categories]);
-
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

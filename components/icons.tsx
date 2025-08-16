@@ -1,3 +1,4 @@
+
 import {
   Sun,
   Moon,
@@ -28,6 +29,7 @@ import {
   Palette,
   ListPlus,
   Star,
+  Sparkles,
 } from 'lucide-react';
 
 export const IconSun = Sun;
@@ -59,3 +61,4 @@ export const IconTrash = Trash2;
 export const IconPalette = Palette;
 export const IconListPlus = ListPlus;
 export const IconStar = Star;
+export const IconSparkles = Sparkles;
