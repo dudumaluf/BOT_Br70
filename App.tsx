@@ -9,6 +9,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { UploadModal } from './components/UploadModal';
 import { EditModal } from './components/EditModal';
 import { SplashScreen } from './components/SplashScreen';
+import { PostLoginSplash } from './components/PostLoginSplash';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { VideoAsset, Theme, Settings, AppState, PreviewLayout, ZoomLevel, GroupMode, SortBy, CategoryType, PerformanceBatch, Category } from './types';
 import { IconChevronsLeft, IconChevronsRight } from './components/icons';
@@ -19,6 +20,8 @@ import { Session } from '@supabase/supabase-js';
 const App: React.FC = () => {
   const [appReady, setAppReady] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
+  const [loginJustHappened, setLoginJustHappened] = useState(false);
+  const sessionRef = useRef(session);
   
   const { 
     assets, loading, addAssets, deleteAsset, updateAsset, deleteMultipleAssets, toggleFavorite,
@@ -67,10 +70,15 @@ const App: React.FC = () => {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
+      sessionRef.current = session;
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      if (!sessionRef.current && newSession) {
+        setLoginJustHappened(true);
+      }
+      setSession(newSession)
+      sessionRef.current = newSession;
     })
 
     return () => subscription.unsubscribe()
@@ -380,6 +388,14 @@ const App: React.FC = () => {
   
   if (!session) {
     return <Login />;
+  }
+  
+  if (loginJustHappened) {
+    return (
+      <AnimatePresence>
+        <PostLoginSplash onFinished={() => setLoginJustHappened(false)} />
+      </AnimatePresence>
+    );
   }
   
   const assetsToDisplay = appState === 'preview' ? getSelectedAssetsData() : filteredAssets;

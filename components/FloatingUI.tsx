@@ -92,15 +92,8 @@ export const FloatingUI: React.FC<FloatingUIProps> = ({
       <AnimatePresence>
         {appState === 'grid' ? (
           <>
-            {/* Top Left: Logo */}
-             <Toolbar position="top-6 left-6 rounded-full" layoutId="logo-bar">
-                <div className="w-8 h-8 bg-primary-light dark:bg-secondary-dark flex items-center justify-center rounded-full">
-                    <img src="/logo.png" alt="BOT Logo" className="h-6 w-6" />
-                </div>
-            </Toolbar>
-
-            {/* Top Center: Search */}
-             <div className="absolute top-6 left-1/2 -translate-x-1/2 z-40 pointer-events-auto">
+            {/* Top Left: Search */}
+             <div className="absolute top-6 left-6 z-40 pointer-events-auto">
                 <div className="relative flex items-center">
                   <motion.input
                     layoutId="search-bar"
