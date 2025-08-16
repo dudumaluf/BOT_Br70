@@ -85,8 +85,8 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({ asset, isSelected, onSel
     >
         <motion.video
             ref={videoRef}
-            src={asset.videoUrl}
-            poster={asset.thumbnailUrl}
+            src={asset.video_url}
+            poster={asset.thumbnail_url}
             muted={!isPreviewing || (isPreviewing && indexInSelection !== 0)}
             loop
             playsInline
@@ -101,8 +101,8 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({ asset, isSelected, onSel
         {!isPreviewing && (
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none p-3 flex flex-col justify-end">
                 <div className="text-white transform-gpu translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                    <p className="font-bold text-sm truncate">{asset.actorName} - Take {asset.takeNumber}</p>
-                    <p className="text-xs text-gray-300">{asset.movementType} (Perf: {asset.performanceActor})</p>
+                    <p className="font-bold text-sm truncate">{asset.actor_name} - Take {asset.take_number}</p>
+                    <p className="text-xs text-gray-300">{asset.movement_type} (Perf: {asset.performance_actor})</p>
                 </div>
             </div>
         )}
@@ -115,11 +115,11 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({ asset, isSelected, onSel
                   e.stopPropagation();
                   onToggleFavorite(asset.id);
               }}
-              className={`p-1.5 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-all ${asset.isFavorite ? 'text-yellow-400' : 'text-white/70 hover:text-white'}`}
-              title={asset.isFavorite ? "Remove from favorites" : "Add to favorites"}
+              className={`p-1.5 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-all ${asset.is_favorite ? 'text-yellow-400' : 'text-white/70 hover:text-white'}`}
+              title={asset.is_favorite ? "Remove from favorites" : "Add to favorites"}
               whileTap={{ scale: 0.9 }}
             >
-              <IconStar size={16} fill={asset.isFavorite ? 'currentColor' : 'none'} />
+              <IconStar size={16} fill={asset.is_favorite ? 'currentColor' : 'none'} />
             </motion.button>
             <div className="relative">
               <motion.button 
@@ -152,7 +152,7 @@ const VideoCardComponent: React.FC<VideoCardProps> = ({ asset, isSelected, onSel
             <IconInfo className="w-6 h-6 text-white bg-black/50 rounded-full p-1 cursor-help"/>
             <div className="absolute bottom-full right-0 mb-2 w-max p-2 text-sm bg-primary-dark border border-secondary-dark text-text-dark opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none">
               <p>Resolution: {asset.resolution.width}x{asset.resolution.height}</p>
-              <p>File Size: {asset.fileSize}</p>
+              <p>File Size: {asset.file_size}</p>
             </div>
           </div>
         )}

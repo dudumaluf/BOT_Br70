@@ -104,8 +104,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUploadReque
       const resolution = await getVideoDimensions(file);
       const sourceFile: StagedSourceFile = {
         id: `${file.name}-${Date.now()}`, file, resolution,
-        previewUrl: URL.createObjectURL(file), actorName: '',
-        movementType: '', performanceActor: '', takeNumber: 1, tags: '',
+        previewUrl: URL.createObjectURL(file), actor_name: '',
+        movement_type: '', performance_actor: '', take_number: 1, tags: '',
       };
       return { id: `batch_${file.name}_${Date.now()}`, sourceFile, resultFiles: [] };
     });
@@ -123,7 +123,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUploadReque
         const resolution = await getVideoDimensions(file);
         return {
             id: `${file.name}-${Date.now()}`, file, resolution,
-            previewUrl: URL.createObjectURL(file), actorName: '',
+            previewUrl: URL.createObjectURL(file), actor_name: '',
         }
       });
     
@@ -143,7 +143,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUploadReque
   const updateResultFile = (batchId: string, fileId: string, value: string) => {
     setBatches(prev => prev.map(b => {
         if (b.id === batchId) {
-            return { ...b, resultFiles: b.resultFiles.map(f => f.id === fileId ? {...f, actorName: value} : f) };
+            return { ...b, resultFiles: b.resultFiles.map(f => f.id === fileId ? {...f, actor_name: value} : f) };
         }
         return b;
     }));
@@ -168,7 +168,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUploadReque
   };
   
   const modalVariants = { hidden: { opacity: 0, scale: 0.95 }, visible: { opacity: 1, scale: 1 }, exit: { opacity: 0, scale: 0.95 } };
-  const isUploadDisabled = batches.length === 0 || batches.some(b => !b.sourceFile.performanceActor || !b.sourceFile.movementType || b.resultFiles.some(r => !r.actorName));
+  const isUploadDisabled = batches.length === 0 || batches.some(b => !b.sourceFile.performance_actor || !b.sourceFile.movement_type || b.resultFiles.some(r => !r.actor_name));
 
   return (
     <motion.div className="fixed inset-0 bg-b-dark/80 backdrop-blur-sm z-[100] flex items-center justify-center" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -187,9 +187,9 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUploadReque
                     <motion.div layout className="flex gap-4 p-2 bg-secondary-dark items-start">
                         <video src={batch.sourceFile.previewUrl} className="w-24 h-auto aspect-[9/16] object-cover bg-black flex-shrink-0" controls={false} muted loop playsInline autoPlay/>
                         <div className="flex-grow grid grid-cols-2 gap-4">
-                            <div><label className="text-xs font-bold text-gray-400 block mb-1">Performance Actor</label><ComboBox options={performanceActors} value={batch.sourceFile.performanceActor} onChange={value => updateSourceFile(batch.id, 'performanceActor', value)} /></div>
-                            <div><label className="text-xs font-bold text-gray-400 block mb-1">Movement</label><ComboBox options={movements} value={batch.sourceFile.movementType} onChange={value => updateSourceFile(batch.id, 'movementType', value)} /></div>
-                            <div><label className="text-xs font-bold text-gray-400 block mb-1">Take #</label><input type="number" value={batch.sourceFile.takeNumber} onChange={(e) => updateSourceFile(batch.id, 'takeNumber', parseInt(e.target.value) || 1)} className="w-full p-2 bg-primary-dark border border-secondary-dark focus:ring-1 focus:ring-white focus:outline-none" min="1" /></div>
+                            <div><label className="text-xs font-bold text-gray-400 block mb-1">Performance Actor</label><ComboBox options={performanceActors} value={batch.sourceFile.performance_actor} onChange={value => updateSourceFile(batch.id, 'performance_actor', value)} /></div>
+                            <div><label className="text-xs font-bold text-gray-400 block mb-1">Movement</label><ComboBox options={movements} value={batch.sourceFile.movement_type} onChange={value => updateSourceFile(batch.id, 'movement_type', value)} /></div>
+                            <div><label className="text-xs font-bold text-gray-400 block mb-1">Take #</label><input type="number" value={batch.sourceFile.take_number} onChange={(e) => updateSourceFile(batch.id, 'take_number', parseInt(e.target.value) || 1)} className="w-full p-2 bg-primary-dark border border-secondary-dark focus:ring-1 focus:ring-white focus:outline-none" min="1" /></div>
                             <div><label className="text-xs font-bold text-gray-400 block mb-1">Tags (comma separated)</label><input type="text" value={batch.sourceFile.tags} onChange={(e) => updateSourceFile(batch.id, 'tags', e.target.value)} className="w-full p-2 bg-primary-dark border border-secondary-dark focus:ring-1 focus:ring-white focus:outline-none" /></div>
                         </div>
                     </motion.div>
@@ -200,7 +200,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUploadReque
                               <video src={file.previewUrl} className="w-16 h-auto aspect-[9/16] object-cover bg-black flex-shrink-0" controls={false} muted loop playsInline autoPlay/>
                                <div className="flex-grow">
                                  <label className="text-xs font-bold text-gray-400 block mb-1">AI Actor Name</label>
-                                 <ComboBox options={actors} value={file.actorName} onChange={value => updateResultFile(batch.id, file.id, value)} />
+                                 <ComboBox options={actors} value={file.actor_name} onChange={value => updateResultFile(batch.id, file.id, value)} />
                                </div>
                                <button onClick={() => removeResultFile(batch.id, file.id)} className="self-center p-1 text-gray-400 hover:text-red-500 flex-shrink-0"><IconTrash size={16}/></button>
                            </motion.div>

@@ -124,17 +124,17 @@ const App: React.FC = () => {
   const filteredAssets = useMemo(() => {
     return assets
       .filter(asset => {
-        const favoriteMatch = !showFavoritesOnly || asset.isFavorite;
+        const favoriteMatch = !showFavoritesOnly || asset.is_favorite;
 
         const searchMatch = searchQuery.length === 0 ||
-          asset.actorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          asset.movementType.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          asset.performanceActor.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          asset.actor_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          asset.movement_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          asset.performance_actor.toLowerCase().includes(searchQuery.toLowerCase()) ||
           asset.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
 
-        const actorMatch = selectedActors.length === 0 || selectedActors.includes(asset.actorName);
-        const movementMatch = selectedMovements.length === 0 || selectedMovements.includes(asset.movementType);
-        const perfActorMatch = selectedPerformanceActors.length === 0 || selectedPerformanceActors.includes(asset.performanceActor);
+        const actorMatch = selectedActors.length === 0 || selectedActors.includes(asset.actor_name);
+        const movementMatch = selectedMovements.length === 0 || selectedMovements.includes(asset.movement_type);
+        const perfActorMatch = selectedPerformanceActors.length === 0 || selectedPerformanceActors.includes(asset.performance_actor);
         
         return favoriteMatch && searchMatch && actorMatch && movementMatch && perfActorMatch;
       })
@@ -144,10 +144,10 @@ const App: React.FC = () => {
                 return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
             case 'created_at_desc':
                 return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-            case 'actorName_asc':
-                return a.actorName.localeCompare(b.actorName);
-            case 'actorName_desc':
-                return b.actorName.localeCompare(a.actorName);
+            case 'actor_name_asc':
+                return a.actor_name.localeCompare(b.actor_name);
+            case 'actor_name_desc':
+                return b.actor_name.localeCompare(a.actor_name);
             default:
                 return 0;
           }

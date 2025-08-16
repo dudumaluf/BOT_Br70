@@ -63,35 +63,35 @@ export const EditModal: React.FC<EditModalProps> = ({ asset, onClose, onSave, ac
         
         <div className="flex-grow overflow-y-auto pr-2 space-y-4">
           <div className="flex gap-4 items-start">
-            <video src={asset.videoUrl} className="w-32 h-auto aspect-[9/16] object-cover bg-black flex-shrink-0" controls={false} autoPlay muted loop playsInline/>
+            <video src={asset.video_url} className="w-32 h-auto aspect-[9/16] object-cover bg-black flex-shrink-0" controls={false} autoPlay muted loop playsInline/>
             <div className="flex-grow grid grid-cols-2 gap-4">
                <div>
                 <label className="text-xs font-bold text-gray-400 block mb-1">Performance Actor</label>
                  <ComboBox
                     options={performanceActors}
-                    value={formData.performanceActor}
-                    onChange={(value) => handleChange('performanceActor', value)}
+                    value={formData.performance_actor}
+                    onChange={(value) => handleChange('performance_actor', value)}
                   />
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-400 block mb-1">Actor</label>
                 <ComboBox
                     options={actors}
-                    value={formData.actorName}
-                    onChange={(value) => handleChange('actorName', value)}
+                    value={formData.actor_name}
+                    onChange={(value) => handleChange('actor_name', value)}
                   />
               </div>
                <div>
                 <label className="text-xs font-bold text-gray-400 block mb-1">Movement</label>
                 <ComboBox
                     options={movements}
-                    value={formData.movementType}
-                    onChange={(value) => handleChange('movementType', value)}
+                    value={formData.movement_type}
+                    onChange={(value) => handleChange('movement_type', value)}
                   />
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-400 block mb-1">Take #</label>
-                <input type="number" value={formData.takeNumber} onChange={(e) => handleChange('takeNumber', parseInt(e.target.value) || 1)} className="w-full p-2 bg-primary-dark border border-secondary-dark focus:ring-1 focus:ring-white focus:outline-none" min="1" />
+                <input type="number" value={formData.take_number} onChange={(e) => handleChange('take_number', parseInt(e.target.value) || 1)} className="w-full p-2 bg-primary-dark border border-secondary-dark focus:ring-1 focus:ring-white focus:outline-none" min="1" />
               </div>
               <div className="col-span-2">
                  <label className="text-xs font-bold text-gray-400 block mb-1">Tags (comma separated)</label>

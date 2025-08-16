@@ -3,26 +3,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { VideoAsset, Category, CategoryType, PerformanceBatch } from '../types';
 import { supabase } from '../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
-import { Database } from '../lib/database.types';
-
-// Mapper to convert snake_case from Supabase to camelCase for the app
-const mapSupabaseVideoToAsset = (video: Database['public']['Tables']['videos']['Row']): VideoAsset => ({
-  id: video.id,
-  created_at: video.created_at,
-  userId: video.user_id,
-  filePath: video.file_path,
-  actorName: video.actor_name,
-  movementType: video.movement_type,
-  performanceActor: video.performance_actor,
-  takeNumber: video.take_number,
-  videoUrl: video.video_url,
-  thumbnailUrl: video.thumbnail_url ?? undefined,
-  tags: video.tags || [],
-  resolution: video.resolution as { width: number, height: number },
-  fileSize: video.file_size,
-  isFavorite: video.is_favorite,
-});
-
 
 export const useAppData = (userId?: string) => {
   const [assets, setAssets] = useState<VideoAsset[]>([]);
@@ -48,7 +28,7 @@ export const useAppData = (userId?: string) => {
         .order('name', { ascending: true });
       if (categoriesError) throw categoriesError;
 
-      setAssets(videosData.map(mapSupabaseVideoToAsset));
+      setAssets(videosData as VideoAsset[]);
       setCategories(categoriesData as Category[]);
 
     } catch (error) {
@@ -69,8 +49,8 @@ export const useAppData = (userId?: string) => {
     if (!userId) return;
     setLoading(true);
     try {
-        const allNewAssets: Omit<VideoAsset, 'id' | 'created_at' | 'videoUrl' | 'thumbnailUrl'>[] = [];
         const allFilesToUpload: { file: File, path: string }[] = [];
+        const newAssetsData = [];
         
         const newCategories = new Map<string, Omit<Category, 'id'>>();
 
@@ -92,41 +72,41 @@ export const useAppData = (userId?: string) => {
         for (const batch of batches) {
             const source = batch.sourceFile;
 
-            addCategoryIfNeeded(source.performanceActor, 'performanceActors');
-            addCategoryIfNeeded(source.movementType, 'movements');
-            addCategoryIfNeeded(source.performanceActor, 'actors');
+            addCategoryIfNeeded(source.performance_actor, 'performanceActors');
+            addCategoryIfNeeded(source.movement_type, 'movements');
+            addCategoryIfNeeded(source.performance_actor, 'actors');
 
             const sourceFilePath = `${userId}/${uuidv4()}-${source.file.name}`;
             allFilesToUpload.push({ file: source.file, path: sourceFilePath });
-            allNewAssets.push({
-                userId,
-                filePath: sourceFilePath,
-                actorName: source.performanceActor,
-                movementType: source.movementType,
-                performanceActor: source.performanceActor,
-                takeNumber: source.takeNumber,
+            
+            newAssetsData.push({
+                file_path: sourceFilePath,
+                actor_name: source.performance_actor, // Source video is performed by the performance actor
+                movement_type: source.movement_type,
+                performance_actor: source.performance_actor,
+                take_number: source.take_number,
                 tags: source.tags.split(',').map(tag => tag.trim()).filter(Boolean),
                 resolution: source.resolution,
-                fileSize: `${(source.file.size / 1024 / 1024).toFixed(2)} MB`,
-                isFavorite: false,
+                file_size: `${(source.file.size / 1024 / 1024).toFixed(2)} MB`,
+                is_favorite: false,
             });
 
             for (const result of batch.resultFiles) {
-                addCategoryIfNeeded(result.actorName, 'actors');
+                addCategoryIfNeeded(result.actor_name, 'actors');
                 
                 const resultFilePath = `${userId}/${uuidv4()}-${result.file.name}`;
                 allFilesToUpload.push({ file: result.file, path: resultFilePath });
-                allNewAssets.push({
-                    userId,
-                    filePath: resultFilePath,
-                    actorName: result.actorName,
-                    movementType: source.movementType,
-                    performanceActor: source.performanceActor,
-                    takeNumber: source.takeNumber,
+
+                newAssetsData.push({
+                    file_path: resultFilePath,
+                    actor_name: result.actor_name,
+                    movement_type: source.movement_type,
+                    performance_actor: source.performance_actor,
+                    take_number: source.take_number,
                     tags: source.tags.split(',').map(tag => tag.trim()).filter(Boolean),
                     resolution: result.resolution,
-                    fileSize: `${(result.file.size / 1024 / 1024).toFixed(2)} MB`,
-                    isFavorite: false,
+                    file_size: `${(result.file.size / 1024 / 1024).toFixed(2)} MB`,
+                    is_favorite: false,
                 });
             }
         }
@@ -139,27 +119,12 @@ export const useAppData = (userId?: string) => {
 
         await Promise.all(allFilesToUpload.map(({ file, path }) => supabase.storage.from('videos').upload(path, file)));
         
-        const assetsWithUrls = await Promise.all(allNewAssets.map(async (asset) => {
-            const { data } = supabase.storage.from('videos').getPublicUrl(asset.filePath);
-            return { ...asset, videoUrl: data.publicUrl };
-        }));
-        
-        // Mapper to convert camelCase from the app to snake_case for Supabase
-        const assetsToInsert = assetsWithUrls.map(asset => ({
-            user_id: asset.userId,
-            file_path: asset.filePath,
-            actor_name: asset.actorName,
-            movement_type: asset.movementType,
-            performance_actor: asset.performanceActor,
-            take_number: asset.takeNumber,
-            video_url: asset.videoUrl,
-            tags: asset.tags,
-            resolution: asset.resolution,
-            file_size: asset.fileSize,
-            is_favorite: asset.isFavorite,
+        const assetsWithUrls = await Promise.all(newAssetsData.map(async (asset) => {
+            const { data } = supabase.storage.from('videos').getPublicUrl(asset.file_path);
+            return { ...asset, video_url: data.publicUrl };
         }));
 
-        const { error: insertError } = await supabase.from('videos').insert(assetsToInsert);
+        const { error: insertError } = await supabase.from('videos').insert(assetsWithUrls);
         if (insertError) throw insertError;
         
         await fetchAllData();
@@ -177,8 +142,8 @@ export const useAppData = (userId?: string) => {
         const { error: deleteVideoError } = await supabase.from('videos').delete().eq('id', assetId);
         if (deleteVideoError) throw deleteVideoError;
 
-        if (assetToDelete?.filePath) {
-            const { error: deleteStorageError } = await supabase.storage.from('videos').remove([assetToDelete.filePath]);
+        if (assetToDelete?.file_path) {
+            const { error: deleteStorageError } = await supabase.storage.from('videos').remove([assetToDelete.file_path]);
             if (deleteStorageError) console.error("Error deleting file from storage:", deleteStorageError);
         }
 
@@ -192,7 +157,7 @@ export const useAppData = (userId?: string) => {
     try {
         const idsSet = new Set(assetIdsToDelete);
         const assetsToDelete = assets.filter(a => idsSet.has(a.id));
-        const filePathsToDelete = assetsToDelete.map(a => a.filePath).filter(Boolean);
+        const filePathsToDelete = assetsToDelete.map(a => a.file_path).filter(Boolean);
 
         setAssets(prev => prev.filter(a => !idsSet.has(a.id)));
         
@@ -211,19 +176,10 @@ export const useAppData = (userId?: string) => {
 
   const updateAsset = useCallback(async (updatedAsset: VideoAsset) => {
     try {
-        const { id, ...updateData } = updatedAsset;
+        const { id, created_at, file_path, video_url, ...updateData } = updatedAsset;
         setAssets(prev => prev.map(a => a.id === id ? updatedAsset : a));
 
-        const supabaseUpdateData = {
-          actor_name: updateData.actorName,
-          movement_type: updateData.movementType,
-          performance_actor: updateData.performanceActor,
-          take_number: updateData.takeNumber,
-          tags: updateData.tags,
-          is_favorite: updateData.isFavorite,
-        };
-
-        const { error } = await supabase.from('videos').update(supabaseUpdateData).eq('id', id);
+        const { error } = await supabase.from('videos').update(updateData).eq('id', id);
         if (error) throw error;
     } catch(error) {
         console.error("Error updating asset:", error);
@@ -235,11 +191,11 @@ export const useAppData = (userId?: string) => {
     const asset = assets.find(a => a.id === assetId);
     if (!asset) return;
 
-    setAssets(prev => prev.map(a => a.id === assetId ? { ...a, isFavorite: !a.isFavorite } : a));
+    setAssets(prev => prev.map(a => a.id === assetId ? { ...a, is_favorite: !a.is_favorite } : a));
     
     const { error } = await supabase
       .from('videos')
-      .update({ is_favorite: !asset.isFavorite })
+      .update({ is_favorite: !asset.is_favorite })
       .eq('id', assetId);
 
     if (error) {

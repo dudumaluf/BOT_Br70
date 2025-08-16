@@ -1,23 +1,22 @@
 
 export interface VideoAsset {
   id: string;
-  userId?: string; // To associate with a Supabase user
-  filePath: string; // To locate file in Supabase storage
-  actorName: string;
-  movementType: string;
-  performanceActor: string;
-  takeNumber: number;
-  videoUrl: string;
-  thumbnailUrl?: string;
+  file_path: string;
+  actor_name: string;
+  movement_type: string;
+  performance_actor: string;
+  take_number: number;
+  video_url: string;
+  thumbnail_url?: string;
   tags: string[];
   created_at: string;
   resolution: { width: number; height: number };
-  fileSize: string;
-  isFavorite: boolean;
+  file_size: string;
+  is_favorite: boolean;
 }
 
-export type GroupMode = 'none' | 'actorName' | 'movementType' | 'performanceActor';
-export type SortBy = 'created_at_desc' | 'created_at_asc' | 'actorName_asc' | 'actorName_desc';
+export type GroupMode = 'none' | 'actor_name' | 'movement_type' | 'performance_actor';
+export type SortBy = 'created_at_desc' | 'created_at_asc' | 'actor_name_asc' | 'actor_name_desc';
 
 export type AppState = 'grid' | 'preview';
 export type PreviewLayout = 'grid' | 'column' | 'row';
@@ -44,15 +43,15 @@ export interface StagedFile {
 }
 
 export interface StagedSourceFile extends StagedFile {
-  actorName: string;
-  movementType: string;
-  performanceActor: string;
-  takeNumber: number;
+  actor_name: string;
+  movement_type: string;
+  performance_actor: string;
+  take_number: number;
   tags: string;
 }
 
 export interface StagedResultFile extends StagedFile {
-    actorName: string;
+    actor_name: string;
 }
 
 export interface PerformanceBatch {

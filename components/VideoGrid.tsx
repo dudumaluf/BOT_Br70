@@ -22,7 +22,7 @@ interface VideoGridProps {
 
 export const VideoGrid: React.FC<VideoGridProps> = ({ assets, loading, selectedAssets, onSelectionChange, groupMode, gridSize, autoplayOnHover, appState, previewLayout, zoomLevel, onEditAsset, onDeleteAsset, onToggleFavorite }) => {
 
-  const renderGroupedView = (key: 'actorName' | 'movementType' | 'performanceActor') => {
+  const renderGroupedView = (key: 'actor_name' | 'movement_type' | 'performance_actor') => {
     const groupedAssets = assets.reduce((acc, asset) => {
       const groupKey = asset[key] || 'Uncategorized';
       if (!acc[groupKey]) {

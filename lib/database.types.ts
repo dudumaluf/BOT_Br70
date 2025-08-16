@@ -1,11 +1,10 @@
-
 export type Json =
   | string
   | number
   | boolean
   | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+  | { [key: string]: any }
+  | any[]
 
 export interface Database {
   public: {
@@ -14,7 +13,6 @@ export interface Database {
         Row: {
           id: string
           created_at: string
-          user_id: string
           file_path: string
           actor_name: string
           movement_type: string
@@ -23,14 +21,13 @@ export interface Database {
           video_url: string
           thumbnail_url: string | null
           tags: string[] | null
-          resolution: { width: number, height: number }
+          resolution: Json
           file_size: string
           is_favorite: boolean
         }
         Insert: {
           id?: string
           created_at?: string
-          user_id: string
           file_path: string
           actor_name: string
           movement_type: string
@@ -39,14 +36,13 @@ export interface Database {
           video_url: string
           thumbnail_url?: string | null
           tags: string[]
-          resolution: { width: number, height: number }
+          resolution: Json
           file_size: string
           is_favorite: boolean
         }
         Update: {
           id?: string
           created_at?: string
-          user_id?: string
           file_path?: string
           actor_name?: string
           movement_type?: string
@@ -55,7 +51,7 @@ export interface Database {
           video_url?: string
           thumbnail_url?: string | null
           tags?: string[]
-          resolution?: { width: number, height: number }
+          resolution?: Json
           file_size?: string
           is_favorite?: boolean
         }

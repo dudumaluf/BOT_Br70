@@ -65,16 +65,16 @@ const Toolbar: React.FC<{children: React.ReactNode, position: string, animate?: 
 
 const GROUP_OPTIONS: { value: GroupMode, label: string, icon: React.ReactNode }[] = [
   { value: 'none', label: 'None', icon: <IconGrid size={16} /> },
-  { value: 'performanceActor', label: 'Perf. Actor', icon: <IconPersonStanding size={16} /> },
-  { value: 'actorName', label: 'Actor', icon: <IconUsers size={16} /> },
-  { value: 'movementType', label: 'Movement', icon: <IconMove size={16} /> },
+  { value: 'performance_actor', label: 'Perf. Actor', icon: <IconPersonStanding size={16} /> },
+  { value: 'actor_name', label: 'Actor', icon: <IconUsers size={16} /> },
+  { value: 'movement_type', label: 'Movement', icon: <IconMove size={16} /> },
 ];
 
 const SORT_OPTIONS: { value: SortBy, label: string }[] = [
     { value: 'created_at_desc', label: 'Newest' },
     { value: 'created_at_asc', label: 'Oldest' },
-    { value: 'actorName_asc', label: 'Actor A-Z' },
-    { value: 'actorName_desc', label: 'Actor Z-A' },
+    { value: 'actor_name_asc', label: 'Actor A-Z' },
+    { value: 'actor_name_desc', label: 'Actor Z-A' },
 ];
 
 export const FloatingUI: React.FC<FloatingUIProps> = ({ 
