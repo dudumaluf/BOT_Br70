@@ -460,10 +460,7 @@ const App: React.FC = () => {
 
           <motion.button 
             onClick={() => setSidebarOpen(!sidebarOpen)} 
-            className="absolute top-1/2 -translate-y-1/2 bg-primary-light dark:bg-primary-dark p-1 z-50 border-r border-t border-b border-secondary-light dark:border-secondary-dark"
-            initial={false}
-            animate={{ left: sidebarOpen ? 256 : 0 }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            className="absolute top-1/2 -translate-y-1/2 left-0 bg-primary-light dark:bg-primary-dark p-1 z-50 border-r border-t border-b border-secondary-light dark:border-secondary-dark"
             title={sidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"}
           >
             {sidebarOpen ? <IconChevronsLeft size={20}/> : <IconChevronsRight size={20}/>}

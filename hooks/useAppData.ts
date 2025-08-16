@@ -28,8 +28,22 @@ export const useAppData = (userId?: string) => {
         .order('name', { ascending: true });
       if (categoriesError) throw categoriesError;
 
-      setAssets(videosData as VideoAsset[]);
-      setCategories(categoriesData as Category[]);
+      if (videosData) {
+        setAssets(videosData.map(v => ({
+            ...v,
+            tags: v.tags ?? [],
+            thumbnail_url: v.thumbnail_url ?? undefined,
+            resolution: v.resolution as { width: number; height: number }
+        })));
+      } else {
+        setAssets([]);
+      }
+      
+      if (categoriesData) {
+        setCategories(categoriesData);
+      } else {
+        setCategories([]);
+      }
 
     } catch (error) {
       console.error("Error fetching data from Supabase:", error);
@@ -113,7 +127,7 @@ export const useAppData = (userId?: string) => {
         
         if (newCategories.size > 0) {
             const categoriesToInsert = Array.from(newCategories.values());
-            const { error: catError } = await supabase.from('categories').insert(categoriesToInsert as any);
+            const { error: catError } = await supabase.from('categories').insert(categoriesToInsert);
             if (catError) throw catError;
         }
 
@@ -211,7 +225,7 @@ export const useAppData = (userId?: string) => {
         const { data, error } = await supabase.from('categories').insert({ type: category, name }).select();
         if (error) throw error;
         if (data) {
-            setCategories(prev => [...prev, ...data as Category[]].sort((a,b) => a.name.localeCompare(b.name)));
+            setCategories(prev => [...prev, ...data].sort((a,b) => a.name.localeCompare(b.name)));
         }
     } catch (error) {
         console.error("Error adding category:", error);
@@ -236,7 +250,7 @@ export const useAppData = (userId?: string) => {
         const assetKey = keyMap[categoryToRename.type];
         if (assetKey) {
           const updatePayload = { [assetKey]: newName };
-          const { error: assetError } = await supabase.from('videos').update(updatePayload as any).eq(assetKey, categoryToRename.name);
+          const { error: assetError } = await supabase.from('videos').update(updatePayload).eq(assetKey, categoryToRename.name);
           if (assetError) throw assetError;
         }
         
@@ -257,7 +271,7 @@ export const useAppData = (userId?: string) => {
         const assetKey = keyMap[categoryToDelete.type];
         if (assetKey) {
           const updatePayload = { [assetKey]: 'Uncategorized' };
-          const { error: assetError } = await supabase.from('videos').update(updatePayload as any).eq(assetKey, categoryToDelete.name);
+          const { error: assetError } = await supabase.from('videos').update(updatePayload).eq(assetKey, categoryToDelete.name);
           if (assetError) throw assetError;
         }
         

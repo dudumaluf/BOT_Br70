@@ -123,11 +123,8 @@ export const FloatingUI: React.FC<FloatingUIProps> = ({
             </Toolbar>
             
             {/* Bottom Left: Data Controls */}
-            <motion.div
-              className="absolute bottom-6 pointer-events-auto"
-              initial={false}
-              animate={{ left: sidebarOpen ? 256 + 24 : 24 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
+            <div
+              className="absolute bottom-6 left-6 pointer-events-auto"
               style={{ zIndex: 40 }}
             >
               <Toolbar position="relative !bottom-0 !left-0 rounded-md">
@@ -148,7 +145,7 @@ export const FloatingUI: React.FC<FloatingUIProps> = ({
                     direction="up"
                   />
               </Toolbar>
-            </motion.div>
+            </div>
 
             {/* Bottom Right: View Controls */}
             <Toolbar position="bottom-6 right-6 pointer-events-auto rounded-md">
