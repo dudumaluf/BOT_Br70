@@ -27,7 +27,7 @@ The application is built with a modern tech stack, focusing on a minimalist, per
 ## Technology Stack
 
 -   **Frontend:** React, TypeScript, Vite
--   **Styling:** Tailwind CSS
+-   **Styling:** Tailwind CSS (via CDN)
 -   **Animation:** Framer Motion
 -   **Icons:** Lucide React
 -   **Backend:** Supabase (PostgreSQL Database, Storage, Auth)
@@ -48,18 +48,23 @@ To run this project locally, you will need to set up a Supabase project and conf
 
 ### 2. Local Environment Setup
 
-1.  **Clone the repository:**
+1.  **Prerequisites:** Make sure you have [Node.js](https://nodejs.org/) (version 18 or newer) installed on your machine.
+
+2.  **Clone the repository:**
     ```bash
     git clone [your-repo-url]
     cd [your-repo-name]
     ```
 
-2.  **Install dependencies:**
-    This project uses `es-modules-shims` and an import map, so no local `npm install` is required for the browser.
+3.  **Install dependencies:**
+    Run the following command in your project's root directory. This will download all the necessary tools for the local development server.
+    ```bash
+    npm install
+    ```
+    *(If you use `pnpm` or `yarn`, you can use `pnpm install` or `yarn install` instead).*
 
-3.  **Configure Environment Variables:**
+4.  **Configure Environment Variables:**
     -   Create a new file in the root of the project named `.env.local`.
-    -   Copy the contents of `.env.example` into this new file.
     -   Go to your Supabase project's **Settings > API** page.
     -   Copy your **Project URL** and **anon (public) key** and paste them into your `.env.local` file.
 
@@ -69,8 +74,12 @@ To run this project locally, you will need to set up a Supabase project and conf
     VITE_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY_HERE"
     ```
 
-4.  **Run the application:**
-    Serve the `index.html` file using a local web server.
+5.  **Run the application:**
+    Start the Vite development server by running:
+    ```bash
+    npm run dev
+    ```
+    This will start the app on a local server (usually `http://localhost:5173`). Open this URL in your browser. The app will now automatically reload whenever you make changes to the code.
 
 ### 3. Deployment
 

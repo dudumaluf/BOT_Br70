@@ -54,7 +54,7 @@ export const Dropdown: React.FC<DropdownProps> = ({ label, options, selected, on
             initial="closed"
             animate="open"
             exit="closed"
-            className={`absolute left-0 w-40 bg-primary-light dark:bg-primary-dark border border-secondary-light dark:border-secondary-dark z-[60] ${direction === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'}`}
+            className={`absolute left-0 w-40 bg-primary-light dark:bg-primary-dark border border-secondary-light dark:border-secondary-dark z-[60] ${direction === 'up' ? 'bottom-full' : 'top-full'}`}
           >
             {options.map(option => (
               <button

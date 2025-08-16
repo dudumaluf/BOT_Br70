@@ -188,9 +188,42 @@ const App: React.FC = () => {
     return Array.from(selectedAssets).map(id => selectedAssetMap.get(id)).filter(Boolean) as VideoAsset[];
   }, [assets, selectedAssets]);
   
-  const handleDownload = () => {
+  const handleDownload = async () => {
     console.log("Downloading assets:", Array.from(selectedAssets));
-    alert(`Initiating download for ${selectedAssets.size} assets.`);
+    const assetsToDownload = getSelectedAssetsData();
+    if (assetsToDownload.length === 0) return;
+
+    for (const asset of assetsToDownload) {
+        try {
+            const response = await fetch(asset.video_url);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            
+            // Sanitize names for filenames
+            const safePerfActor = asset.performance_actor.replace(/[^a-z0-9]/gi, '_');
+            const safeMovement = asset.movement_type.replace(/[^a-z0-9]/gi, '_');
+            const safeActor = asset.actor_name.replace(/[^a-z0-9]/gi, '_');
+            const filename = `${safePerfActor}_${safeMovement}_${safeActor}_T${asset.take_number}.mp4`;
+            
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            if (assetsToDownload.length > 1) {
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+        } catch (error) {
+            console.error(`Failed to download ${asset.video_url}:`, error);
+            alert(`Could not download asset: ${asset.actor_name} - Take ${asset.take_number}.`);
+        }
+    }
   };
 
   const handleClearSelection = useCallback(() => {
