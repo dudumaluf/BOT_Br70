@@ -56,7 +56,6 @@ export interface Database {
           file_size?: string
           is_favorite?: boolean
         }
-        Relationships: []
       }
       categories: {
         Row: {
@@ -77,7 +76,6 @@ export interface Database {
           type?: 'actors' | 'movements' | 'performanceActors'
           name?: string
         }
-        Relationships: []
       }
       generation_tasks: {
         Row: {
@@ -116,7 +114,6 @@ export interface Database {
           output_video_url?: string | null
           error_message?: string | null
         }
-        Relationships: []
       }
     }
     Views: {

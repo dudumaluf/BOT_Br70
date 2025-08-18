@@ -72,11 +72,6 @@ const App: React.FC = () => {
   const isDraggable = appState === 'preview' && zoomLevel === '100%';
   
   useEffect(() => {
-    // This log helps confirm that the latest version of the code is deployed.
-    console.log('%cBOT-BR70 App v1.3.0 (Final Debug) is running.', 'color: #00ff00; font-weight: bold;');
-  }, []);
-
-  useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       sessionRef.current = session;

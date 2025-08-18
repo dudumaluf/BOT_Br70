@@ -330,20 +330,18 @@ const AiGenerator: React.FC<{
             try {
                 const runwayTask: any = await runwayApi.getTaskStatus(task.runway_task_id);
 
-                // Make status comparison case-insensitive and check for an actual change.
                 if (task.status.toLowerCase() !== runwayTask.status.toLowerCase()) {
                     
+                    let outputUrl = null;
                     if (runwayTask.status.toLowerCase() === 'succeeded') {
-                        // This log will show us the exact structure of the successful response from Runway.
-                        console.log('✅ Runway task succeeded! Full response:', runwayTask);
+                        // Based on the debug log, the URL is in `output[0]`
+                        if (runwayTask.output && Array.isArray(runwayTask.output) && runwayTask.output.length > 0) {
+                            outputUrl = runwayTask.output[0];
+                        } else {
+                           // Fallback for other possible structures, just in case.
+                           outputUrl = runwayTask.output?.uri || runwayTask.output?.url || runwayTask.uri || null;
+                        }
                     }
-                    
-                    // Intelligently find the output URL from multiple possible locations in the response.
-                    const outputUrl = runwayTask.output?.uri || 
-                                      runwayTask.output?.url || 
-                                      runwayTask.uri ||
-                                      (runwayTask.outputs && runwayTask.outputs.length > 0 && runwayTask.outputs[0].uri) ||
-                                      null;
 
                     const updatePayload: Database['public']['Tables']['generation_tasks']['Update'] = {
                         status: runwayTask.status.toUpperCase() as RunwayTaskStatus,

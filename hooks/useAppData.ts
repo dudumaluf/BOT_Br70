@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect, useCallback } from 'react';
 import { VideoAsset, Category, CategoryType, PerformanceBatch, GenerationTask } from '../types';
 import { supabase } from '../lib/supabase';
@@ -127,7 +128,7 @@ export const useAppData = (userId?: string) => {
         
         if (newCategories.size > 0) {
             const categoriesToInsert = Array.from(newCategories.values());
-            const { error: catError } = await supabase.from('categories').insert(categoriesToInsert as Database['public']['Tables']['categories']['Insert'][]);
+            const { error: catError } = await supabase.from('categories').insert(categoriesToInsert);
             if (catError) throw catError;
         }
 
@@ -138,7 +139,7 @@ export const useAppData = (userId?: string) => {
             return { ...asset, video_url: data.publicUrl };
         }));
 
-        const { error: insertError } = await supabase.from('videos').insert(assetsWithUrls as Database['public']['Tables']['videos']['Insert'][]);
+        const { error: insertError } = await supabase.from('videos').insert(assetsWithUrls);
         if (insertError) throw insertError;
         
         await fetchAllData();
@@ -193,7 +194,7 @@ export const useAppData = (userId?: string) => {
         const { id, created_at, file_path, video_url, ...updateData } = updatedAsset;
         setAssets(prev => prev.map(a => a.id === id ? updatedAsset : a));
 
-        const { error } = await supabase.from('videos').update(updateData as Database['public']['Tables']['videos']['Update']).eq('id', id);
+        const { error } = await supabase.from('videos').update(updateData).eq('id', id);
         if (error) throw error;
     } catch(error) {
         console.error("Error updating asset:", error);
@@ -209,7 +210,7 @@ export const useAppData = (userId?: string) => {
     
     const { error } = await supabase
       .from('videos')
-      .update({ is_favorite: !asset.is_favorite } as Database['public']['Tables']['videos']['Update'])
+      .update({ is_favorite: !asset.is_favorite })
       .eq('id', assetId);
 
     if (error) {
@@ -220,7 +221,7 @@ export const useAppData = (userId?: string) => {
 
   // Generation Task Management
   const createGenerationTask = useCallback(async (taskData: Omit<GenerationTask, 'id' | 'created_at'>) => {
-    const { data, error } = await supabase.from('generation_tasks').insert([taskData] as Database['public']['Tables']['generation_tasks']['Insert'][]).select().single();
+    const { data, error } = await supabase.from('generation_tasks').insert([taskData]).select().single();
     if (error) {
       console.error('Error creating generation task:', error);
       return null;
@@ -309,7 +310,7 @@ export const useAppData = (userId?: string) => {
         is_favorite: false,
       };
       
-      const { error: insertError } = await supabase.from('videos').insert([newAssetData] as Database['public']['Tables']['videos']['Insert'][]);
+      const { error: insertError } = await supabase.from('videos').insert([newAssetData]);
       if (insertError) throw insertError;
       
       // 5. Delete the completed task and refresh data
@@ -324,7 +325,7 @@ export const useAppData = (userId?: string) => {
   const addCategoryItem = useCallback(async (category: CategoryType, name: string) => {
     if (!name || name.trim() === '' || !userId) return;
     try {
-        const { data, error } = await supabase.from('categories').insert([{ type: category, name }] as Database['public']['Tables']['categories']['Insert'][]).select();
+        const { data, error } = await supabase.from('categories').insert([{ type: category, name }]).select();
         if (error) throw error;
         if (data) {
             setCategories(prev => [...prev, ...(data as any[])].sort((a,b) => a.name.localeCompare(b.name)));
@@ -343,7 +344,7 @@ export const useAppData = (userId?: string) => {
     }
     
     try {
-        const { error: catError } = await supabase.from('categories').update({ name: newName } as Database['public']['Tables']['categories']['Update']).eq('id', categoryToRename.id);
+        const { error: catError } = await supabase.from('categories').update({ name: newName }).eq('id', categoryToRename.id);
         if (catError) throw catError;
 
         const keyMap: Record<CategoryType, 'actor_name' | 'movement_type' | 'performance_actor'> = {
@@ -356,7 +357,7 @@ export const useAppData = (userId?: string) => {
           else if(assetKey === 'movement_type') updatePayload.movement_type = newName;
           else if(assetKey === 'performance_actor') updatePayload.performance_actor = newName;
           
-          const { error: assetError } = await supabase.from('videos').update(updatePayload as Database['public']['Tables']['videos']['Update']).eq(assetKey, categoryToRename.name);
+          const { error: assetError } = await supabase.from('videos').update(updatePayload).eq(assetKey, categoryToRename.name);
           if (assetError) throw assetError;
         }
         
@@ -381,7 +382,7 @@ export const useAppData = (userId?: string) => {
           else if(assetKey === 'movement_type') updatePayload.movement_type = 'Uncategorized';
           else if(assetKey === 'performance_actor') updatePayload.performance_actor = 'Uncategorized';
           
-          const { error: assetError } = await supabase.from('videos').update(updatePayload as Database['public']['Tables']['videos']['Update']).eq(assetKey, categoryToDelete.name);
+          const { error: assetError } = await supabase.from('videos').update(updatePayload).eq(assetKey, categoryToDelete.name);
           if (assetError) throw assetError;
         }
         
