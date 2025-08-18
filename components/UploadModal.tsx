@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IconX, IconUploadCloud, IconTrash, IconBot } from './icons';
@@ -331,6 +332,11 @@ const AiGenerator: React.FC<{
 
                 // Make status comparison case-insensitive and check for an actual change.
                 if (task.status.toLowerCase() !== runwayTask.status.toLowerCase()) {
+                    
+                    if (runwayTask.status.toLowerCase() === 'succeeded') {
+                        // This log will show us the exact structure of the successful response from Runway.
+                        console.log('✅ Runway task succeeded! Full response:', runwayTask);
+                    }
                     
                     // Intelligently find the output URL from multiple possible locations in the response.
                     const outputUrl = runwayTask.output?.uri || 

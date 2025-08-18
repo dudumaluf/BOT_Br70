@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppData } from './hooks/useAppData';
@@ -69,6 +70,11 @@ const App: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
   const isDraggable = appState === 'preview' && zoomLevel === '100%';
+  
+  useEffect(() => {
+    // This log helps confirm that the latest version of the code is deployed.
+    console.log('%cBOT-BR70 App v1.3.0 (Final Debug) is running.', 'color: #00ff00; font-weight: bold;');
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
