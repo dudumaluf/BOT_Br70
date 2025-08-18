@@ -298,7 +298,7 @@ export const useAppData = (userId?: string) => {
       const { data: urlData } = supabase.storage.from('videos').getPublicUrl(filePath);
 
       // 4. Create new asset in 'videos' table
-      const newAssetData: Omit<VideoAsset, 'id' | 'created_at'> = {
+      const newAssetData: Database['public']['Tables']['videos']['Insert'] = {
         ...(task.initial_metadata as any),
         actor_name: finalMetadata.actor_name,
         tags: finalMetadata.tags,
@@ -356,7 +356,7 @@ export const useAppData = (userId?: string) => {
           else if(assetKey === 'movement_type') updatePayload.movement_type = newName;
           else if(assetKey === 'performance_actor') updatePayload.performance_actor = newName;
           
-          const { error: assetError } = await supabase.from('videos').update(updatePayload).eq(assetKey, categoryToRename.name);
+          const { error: assetError } = await supabase.from('videos').update(updatePayload as Database['public']['Tables']['videos']['Update']).eq(assetKey, categoryToRename.name);
           if (assetError) throw assetError;
         }
         
@@ -381,7 +381,7 @@ export const useAppData = (userId?: string) => {
           else if(assetKey === 'movement_type') updatePayload.movement_type = 'Uncategorized';
           else if(assetKey === 'performance_actor') updatePayload.performance_actor = 'Uncategorized';
           
-          const { error: assetError } = await supabase.from('videos').update(updatePayload).eq(assetKey, categoryToDelete.name);
+          const { error: assetError } = await supabase.from('videos').update(updatePayload as Database['public']['Tables']['videos']['Update']).eq(assetKey, categoryToDelete.name);
           if (assetError) throw assetError;
         }
         

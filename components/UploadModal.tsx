@@ -335,7 +335,8 @@ const AiGenerator: React.FC<{
                     // Intelligently find the output URL from multiple possible locations in the response.
                     const outputUrl = runwayTask.output?.uri || 
                                       runwayTask.output?.url || 
-                                      runwayTask.uri || 
+                                      runwayTask.uri ||
+                                      (runwayTask.outputs && runwayTask.outputs.length > 0 && runwayTask.outputs[0].uri) ||
                                       null;
 
                     const updatePayload: Database['public']['Tables']['generation_tasks']['Update'] = {

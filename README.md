@@ -73,6 +73,7 @@ To run this project locally, you will need to set up a Supabase project and conf
 
     ```
     # .env.local
+    # These are for the frontend client
     VITE_SUPABASE_URL="YOUR_SUPABASE_URL_HERE"
     VITE_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY_HERE"
     
@@ -98,5 +99,3 @@ The application is ready to be deployed on Vercel.
     -   `VITE_SUPABASE_ANON_KEY`
     -   `RUNWAY_API_KEY`
 4.  Deploy! Vercel will automatically detect the `api` directory and deploy the serverless function.
-=)
- 
