@@ -30,6 +30,7 @@ import {
   ListPlus,
   Star,
   Sparkles,
+  Bot,
 } from 'lucide-react';
 
 export const IconSun = Sun;
@@ -62,3 +63,4 @@ export const IconPalette = Palette;
 export const IconListPlus = ListPlus;
 export const IconStar = Star;
 export const IconSparkles = Sparkles;
+export const IconBot = Bot;

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppData } from './hooks/useAppData';
@@ -11,7 +12,7 @@ import { EditModal } from './components/EditModal';
 import { SplashScreen } from './components/SplashScreen';
 import { PostLoginSplash } from './components/PostLoginSplash';
 import { ConfirmationModal } from './components/ConfirmationModal';
-import { VideoAsset, Theme, Settings, AppState, PreviewLayout, ZoomLevel, GroupMode, SortBy, CategoryType, PerformanceBatch, Category } from './types';
+import { VideoAsset, Theme, Settings, AppState, PreviewLayout, ZoomLevel, GroupMode, SortBy, CategoryType, PerformanceBatch, Category, GenerationTask } from './types';
 import { IconChevronsLeft, IconChevronsRight } from './components/icons';
 import { supabase } from './lib/supabase';
 import { Session } from '@supabase/supabase-js';
@@ -26,6 +27,8 @@ const App: React.FC = () => {
   const { 
     assets, loading, addAssets, deleteAsset, updateAsset, deleteMultipleAssets, toggleFavorite,
     categories, addCategoryItem, renameCategoryItem, deleteCategoryItem,
+    generationTasks, createGenerationTask, deleteGenerationTask, saveGeneratedVideoToGallery,
+    refreshData
   } = useAppData(session?.user?.id);
 
   const actors = useMemo(() => categories.filter(c => c.type === 'actors').map(c => c.name), [categories]);
@@ -93,8 +96,6 @@ const App: React.FC = () => {
   // Defer heavy upload processing to prevent UI freeze
   useEffect(() => {
     if (pendingUpload) {
-        // This logic will now be inside useAppData, triggered by a call to addAssets
-        // For now, we'll keep the structure but simplify
         addAssets(pendingUpload);
         setPendingUpload(null);
     }
@@ -510,7 +511,13 @@ const App: React.FC = () => {
             movements={movements}
             performanceActors={performanceActors}
             onClose={() => setIsUploadModalOpen(false)} 
-            onUploadRequest={handleUploadRequest} 
+            onUploadRequest={handleUploadRequest}
+            userId={session.user.id}
+            generationTasks={generationTasks}
+            createGenerationTask={createGenerationTask}
+            deleteGenerationTask={deleteGenerationTask}
+            saveGeneratedVideoToGallery={saveGeneratedVideoToGallery}
+            refreshData={refreshData}
         />}
         {isEditModalOpen && assetToEdit && <EditModal 
             asset={assetToEdit} 

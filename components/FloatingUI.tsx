@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GroupMode, SortBy, AppState, PreviewLayout, ZoomLevel } from '../types';
-import { IconSearch, IconDownload, IconX, IconMinus, IconPlus, IconSettings, IconColumns, IconRows, IconGrid, IconUploadCloud, IconUsers, IconMove, IconPersonStanding, IconSort, IconSun } from './icons';
+import { IconSearch, IconDownload, IconX, IconMinus, IconPlus, IconSettings, IconColumns, IconRows, IconGrid, IconUploadCloud, IconUsers, IconMove, IconPersonStanding, IconSort } from './icons';
 import { Dropdown } from './Dropdown';
 
 interface FloatingUIProps {
@@ -111,7 +112,7 @@ export const FloatingUI: React.FC<FloatingUIProps> = ({
             
             {/* Top Right: App Controls */}
             <Toolbar position="top-6 right-6 pointer-events-auto rounded-md" layoutId="app-controls">
-              <MotionButton onClick={onUploadClick} title="Upload Assets">
+              <MotionButton onClick={onUploadClick} title="Upload & Generate">
                 <IconUploadCloud className="h-5 w-5" />
               </MotionButton>
               <MotionButton onClick={onSettingsClick} title="Settings & Management">

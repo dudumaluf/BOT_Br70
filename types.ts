@@ -1,4 +1,5 @@
 
+
 export interface VideoAsset {
   id: string;
   file_path: string;
@@ -28,7 +29,7 @@ export type GroupedVideos = {
 
 export type Theme = 'light' | 'dark';
 export type CategoryType = 'actors' | 'movements' | 'performanceActors';
-export type Category = { id: number; type: CategoryType; name: string; };
+export type Category = { id: number; type: CategoryType; name: string; created_at: string; };
 
 export interface Settings {
   autoplayOnHover: boolean;
@@ -58,4 +59,27 @@ export interface PerformanceBatch {
     id: string;
     sourceFile: StagedSourceFile;
     resultFiles: StagedResultFile[];
+}
+
+// Generator-related types
+export type RunwayTaskStatus = 'PENDING' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'ARCHIVED' | 'UPLOADING';
+
+export interface GenerationTask {
+  id: string; // Supabase DB id
+  created_at: string;
+  user_id: string;
+  runway_task_id: string | null;
+  status: RunwayTaskStatus;
+  initial_metadata: {
+    performance_actor: string;
+    movement_type: string;
+    take_number: number;
+    tags: string[];
+    character_asset_name: string;
+    reference_video_name: string;
+  };
+  input_reference_video_url: string | null;
+  input_character_url: string | null;
+  output_video_url: string | null;
+  error_message: string | null;
 }

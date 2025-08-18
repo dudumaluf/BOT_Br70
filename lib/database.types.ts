@@ -73,6 +73,45 @@ export interface Database {
         }
         Relationships: []
       }
+      generation_tasks: {
+        Row: {
+          id: string
+          created_at: string
+          user_id: string
+          runway_task_id: string | null
+          status: string
+          initial_metadata: Json
+          input_reference_video_url: string | null
+          input_character_url: string | null
+          output_video_url: string | null
+          error_message: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          user_id: string
+          runway_task_id?: string | null
+          status: string
+          initial_metadata: Json
+          input_reference_video_url?: string | null
+          input_character_url?: string | null
+          output_video_url?: string | null
+          error_message?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          user_id?: string
+          runway_task_id?: string | null
+          status?: string
+          initial_metadata?: Json
+          input_reference_video_url?: string | null
+          input_character_url?: string | null
+          output_video_url?: string | null
+          error_message?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

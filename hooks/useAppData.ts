@@ -1,12 +1,14 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { VideoAsset, Category, CategoryType, PerformanceBatch } from '../types';
+import { VideoAsset, Category, CategoryType, PerformanceBatch, GenerationTask } from '../types';
 import { supabase } from '../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
+import type { Database } from '../lib/database.types';
 
 export const useAppData = (userId?: string) => {
   const [assets, setAssets] = useState<VideoAsset[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [generationTasks, setGenerationTasks] = useState<GenerationTask[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchAllData = useCallback(async () => {
@@ -16,47 +18,45 @@ export const useAppData = (userId?: string) => {
     }
     setLoading(true);
     try {
-      const { data: videosData, error: videosError } = await supabase
-        .from('videos')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const [
+        { data: videosData, error: videosError },
+        { data: categoriesData, error: categoriesError },
+        { data: tasksData, error: tasksError }
+      ] = await Promise.all([
+        supabase.from('videos').select('*').order('created_at', { ascending: false }),
+        supabase.from('categories').select('*').order('name', { ascending: true }),
+        supabase.from('generation_tasks').select('*').order('created_at', { ascending: false })
+      ]);
+
       if (videosError) throw videosError;
-
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name', { ascending: true });
       if (categoriesError) throw categoriesError;
+      if (tasksError) throw tasksError;
 
-      if (videosData) {
-        setAssets(videosData.map(v => ({
-            ...v,
-            tags: v.tags ?? [],
-            thumbnail_url: v.thumbnail_url ?? undefined,
-            resolution: v.resolution as { width: number; height: number }
-        })));
-      } else {
-        setAssets([]);
-      }
+      setAssets((videosData as any[])?.map((v: any) => ({
+          ...v,
+          tags: v.tags ?? [],
+          thumbnail_url: v.thumbnail_url ?? undefined,
+          resolution: v.resolution as { width: number; height: number }
+      })) ?? []);
       
-      if (categoriesData) {
-        setCategories(categoriesData);
-      } else {
-        setCategories([]);
-      }
+      setCategories((categoriesData as any[]) ?? []);
+      setGenerationTasks((tasksData as any[]) ?? []);
 
     } catch (error) {
       console.error("Error fetching data from Supabase:", error);
       setAssets([]);
       setCategories([]);
+      setGenerationTasks([]);
     } finally {
       setLoading(false);
     }
   }, [userId]);
   
   useEffect(() => {
-    fetchAllData();
-  }, [fetchAllData]);
+    if (userId) {
+      fetchAllData();
+    }
+  }, [userId, fetchAllData]);
   
   // Asset Management
   const addAssets = useCallback(async (batches: PerformanceBatch[]) => {
@@ -66,7 +66,7 @@ export const useAppData = (userId?: string) => {
         const allFilesToUpload: { file: File, path: string }[] = [];
         const newAssetsData = [];
         
-        const newCategories = new Map<string, Omit<Category, 'id'>>();
+        const newCategories = new Map<string, Omit<Category, 'id' | 'created_at'>>();
 
         const existingCategoryMap = {
             actors: new Set(categories.filter(c => c.type === 'actors').map(c => c.name)),
@@ -138,7 +138,7 @@ export const useAppData = (userId?: string) => {
             return { ...asset, video_url: data.publicUrl };
         }));
 
-        const { error: insertError } = await supabase.from('videos').insert(assetsWithUrls);
+        const { error: insertError } = await supabase.from('videos').insert(assetsWithUrls as any);
         if (insertError) throw insertError;
         
         await fetchAllData();
@@ -218,14 +218,113 @@ export const useAppData = (userId?: string) => {
     }
   }, [assets, fetchAllData]);
 
+  // Generation Task Management
+  const createGenerationTask = useCallback(async (taskData: Omit<GenerationTask, 'id' | 'created_at'>) => {
+    const { data, error } = await supabase.from('generation_tasks').insert([taskData]).select().single();
+    if (error) {
+      console.error('Error creating generation task:', error);
+      return null;
+    }
+    const newTask = data as any as GenerationTask;
+    setGenerationTasks(prev => [newTask, ...prev]);
+    return newTask;
+  }, []);
+
+  const deleteGenerationTask = useCallback(async (taskId: string) => {
+    const taskToDelete = generationTasks.find(t => t.id === taskId);
+    setGenerationTasks(prev => prev.filter(t => t.id !== taskId));
+    
+    if (taskToDelete?.runway_task_id && (taskToDelete.status === 'PENDING' || taskToDelete.status === 'RUNNING')) {
+      try {
+        await fetch(`https://api.dev.runwayml.com/v1/tasks/${taskToDelete.runway_task_id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${(import.meta as any).env.VITE_RUNWAY_API_KEY}`,
+            'X-Runway-Version': '2024-11-06',
+          }
+        });
+      } catch (e) {
+        console.warn("Could not cancel Runway task, it may have already completed or been deleted.", e);
+      }
+    }
+    
+    const { error } = await supabase.from('generation_tasks').delete().eq('id', taskId);
+    if (error) {
+      console.error('Error deleting generation task:', error);
+      fetchAllData(); // Revert on error
+    }
+
+    const pathsToDelete = [taskToDelete?.input_character_url, taskToDelete?.input_reference_video_url]
+      .filter(Boolean)
+      .map(url => new URL(url as string).pathname.split('/videos/')[1]);
+      
+    if (pathsToDelete.length > 0) {
+        await supabase.storage.from('videos').remove(pathsToDelete);
+    }
+  }, [generationTasks, fetchAllData]);
+  
+  const saveGeneratedVideoToGallery = useCallback(async (
+    task: GenerationTask,
+    finalMetadata: { actor_name: string, tags: string[] }
+  ) => {
+    if (!userId || !task.output_video_url) return;
+    try {
+      // 1. Fetch video from Runway URL
+      const response = await fetch(task.output_video_url);
+      if (!response.ok) throw new Error(`Failed to fetch video from Runway: ${response.statusText}`);
+      const videoBlob = await response.blob();
+      const filename = `${task.initial_metadata.performance_actor}_${task.initial_metadata.movement_type}_${finalMetadata.actor_name}.mp4`;
+      const videoFile = new File([videoBlob], filename, { type: 'video/mp4' });
+
+      // 2. Get video dimensions
+      const tempVideo = document.createElement('video');
+      const videoObjectURL = URL.createObjectURL(videoFile);
+      const dimensions = await new Promise<{width: number, height: number}>(resolve => {
+        tempVideo.onloadedmetadata = () => {
+          resolve({ width: tempVideo.videoWidth, height: tempVideo.videoHeight });
+          URL.revokeObjectURL(videoObjectURL);
+        };
+        tempVideo.src = videoObjectURL;
+      });
+
+      // 3. Upload to our Supabase bucket
+      const filePath = `${userId}/${uuidv4()}-${videoFile.name}`;
+      const { error: uploadError } = await supabase.storage.from('videos').upload(filePath, videoFile);
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from('videos').getPublicUrl(filePath);
+
+      // 4. Create new asset in 'videos' table
+      const newAssetData: Omit<VideoAsset, 'id' | 'created_at'> = {
+        ...(task.initial_metadata as any),
+        actor_name: finalMetadata.actor_name,
+        tags: finalMetadata.tags,
+        file_path: filePath,
+        video_url: urlData.publicUrl,
+        file_size: `${(videoFile.size / 1024 / 1024).toFixed(2)} MB`,
+        resolution: dimensions,
+        is_favorite: false,
+      };
+      
+      const { error: insertError } = await supabase.from('videos').insert([newAssetData]);
+      if (insertError) throw insertError;
+      
+      // 5. Delete the completed task and refresh data
+      await deleteGenerationTask(task.id);
+      await fetchAllData();
+    } catch(error) {
+      console.error("Error saving generated asset to gallery:", error);
+    }
+  }, [userId, fetchAllData, deleteGenerationTask]);
+
   // Category Management
   const addCategoryItem = useCallback(async (category: CategoryType, name: string) => {
     if (!name || name.trim() === '' || !userId) return;
     try {
-        const { data, error } = await supabase.from('categories').insert({ type: category, name }).select();
+        const { data, error } = await supabase.from('categories').insert([{ type: category, name }]).select();
         if (error) throw error;
         if (data) {
-            setCategories(prev => [...prev, ...data].sort((a,b) => a.name.localeCompare(b.name)));
+            setCategories(prev => [...prev, ...(data as any[])].sort((a,b) => a.name.localeCompare(b.name)));
         }
     } catch (error) {
         console.error("Error adding category:", error);
@@ -249,7 +348,11 @@ export const useAppData = (userId?: string) => {
         };
         const assetKey = keyMap[categoryToRename.type];
         if (assetKey) {
-          const updatePayload = { [assetKey]: newName };
+          let updatePayload: Database['public']['Tables']['videos']['Update'] = {};
+          if(assetKey === 'actor_name') updatePayload.actor_name = newName;
+          else if(assetKey === 'movement_type') updatePayload.movement_type = newName;
+          else if(assetKey === 'performance_actor') updatePayload.performance_actor = newName;
+          
           const { error: assetError } = await supabase.from('videos').update(updatePayload).eq(assetKey, categoryToRename.name);
           if (assetError) throw assetError;
         }
@@ -270,7 +373,11 @@ export const useAppData = (userId?: string) => {
         };
         const assetKey = keyMap[categoryToDelete.type];
         if (assetKey) {
-          const updatePayload = { [assetKey]: 'Uncategorized' };
+          let updatePayload: Database['public']['Tables']['videos']['Update'] = {};
+          if(assetKey === 'actor_name') updatePayload.actor_name = 'Uncategorized';
+          else if(assetKey === 'movement_type') updatePayload.movement_type = 'Uncategorized';
+          else if(assetKey === 'performance_actor') updatePayload.performance_actor = 'Uncategorized';
+          
           const { error: assetError } = await supabase.from('videos').update(updatePayload).eq(assetKey, categoryToDelete.name);
           if (assetError) throw assetError;
         }
@@ -284,5 +391,7 @@ export const useAppData = (userId?: string) => {
   return { 
     assets, loading, addAssets, deleteAsset, deleteMultipleAssets, updateAsset, toggleFavorite,
     categories, addCategoryItem, renameCategoryItem, deleteCategoryItem,
+    generationTasks, createGenerationTask, deleteGenerationTask, saveGeneratedVideoToGallery,
+    refreshData: fetchAllData,
   };
 };
