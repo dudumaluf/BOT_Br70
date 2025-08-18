@@ -98,4 +98,5 @@ The application is ready to be deployed on Vercel.
     -   `VITE_SUPABASE_ANON_KEY`
     -   `RUNWAY_API_KEY`
 4.  Deploy! Vercel will automatically detect the `api` directory and deploy the serverless function.
+=)
  
