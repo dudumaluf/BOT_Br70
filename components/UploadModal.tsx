@@ -325,26 +325,39 @@ const AiGenerator: React.FC<{
         if (tasksToPoll.length === 0) return;
 
         for (const task of tasksToPoll) {
-          if (!task.runway_task_id) continue;
-          try {
-            const runwayTask: any = await runwayApi.getTaskStatus(task.runway_task_id);
-            if (task.status.toLowerCase() !== runwayTask.status) {
-              const updatePayload: Database['public']['Tables']['generation_tasks']['Update'] = {
-                status: runwayTask.status.toUpperCase(),
-                output_video_url: runwayTask.output?.uri || null,
-                error_message: runwayTask.error || null,
-              };
-              const { error } = await supabase.from('generation_tasks').update(updatePayload).eq('id', task.id);
-              if (!error) {
-                refreshData(); // Refresh data to get immediate UI update
-              }
+            if (!task.runway_task_id) continue;
+            try {
+                const runwayTask: any = await runwayApi.getTaskStatus(task.runway_task_id);
+
+                // Make status comparison case-insensitive and check for an actual change.
+                if (task.status.toLowerCase() !== runwayTask.status.toLowerCase()) {
+                    
+                    // Intelligently find the output URL from multiple possible locations in the response.
+                    const outputUrl = runwayTask.output?.uri || 
+                                      runwayTask.output?.url || 
+                                      runwayTask.uri || 
+                                      null;
+
+                    const updatePayload: Database['public']['Tables']['generation_tasks']['Update'] = {
+                        status: runwayTask.status.toUpperCase() as RunwayTaskStatus,
+                        output_video_url: outputUrl,
+                        error_message: runwayTask.error || null,
+                    };
+                    
+                    const { error } = await supabase.from('generation_tasks').update(updatePayload).eq('id', task.id);
+                    
+                    if (!error) {
+                        refreshData(); // Refresh data to get immediate UI update
+                    } else {
+                        console.error(`Failed to update task ${task.id} in Supabase:`, error);
+                    }
+                }
+            } catch (error: any) {
+                console.error(`Error polling task ${task.id}:`, error);
+                const updatePayload: Database['public']['Tables']['generation_tasks']['Update'] = { status: 'FAILED', error_message: error.message };
+                await supabase.from('generation_tasks').update(updatePayload).eq('id', task.id);
+                refreshData();
             }
-          } catch (error: any) {
-            console.error(`Error polling task ${task.id}:`, error);
-            const updatePayload: Database['public']['Tables']['generation_tasks']['Update'] = { status: 'FAILED', error_message: error.message };
-            await supabase.from('generation_tasks').update(updatePayload).eq('id', task.id);
-            refreshData();
-          }
         }
     }, [tasks, refreshData]);
 
