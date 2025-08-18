@@ -300,9 +300,16 @@ export const useAppData = (userId?: string) => {
 
       // 4. Create new asset in 'videos' table
       const newAssetData: Database['public']['Tables']['videos']['Insert'] = {
-        ...(task.initial_metadata as any),
+        // Correctly map fields from the task metadata to the video table schema
+        performance_actor: task.initial_metadata.performance_actor,
+        movement_type: task.initial_metadata.movement_type,
+        take_number: task.initial_metadata.take_number,
+        
+        // Add the new metadata from the final save form
         actor_name: finalMetadata.actor_name,
         tags: finalMetadata.tags,
+        
+        // Add the rest of the required fields
         file_path: filePath,
         video_url: urlData.publicUrl,
         file_size: `${(videoFile.size / 1024 / 1024).toFixed(2)} MB`,
