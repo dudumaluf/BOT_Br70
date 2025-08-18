@@ -18,6 +18,7 @@ The application is built with a modern tech stack, focusing on a minimalist, per
 -   **Drag-to-Scroll:** Intuitive panning for oversized videos in 100% preview mode.
 -   **Favorites System:** Mark key assets as favorites for quick access.
 -   **Dynamic Management Hub:** A central place to manage filter categories (add, rename, delete) and user preferences.
+-   **AI Video Generation:** Integrated RunwayML Act-Two generation directly within the upload workflow.
 -   **Workflow-Driven Uploads:** A powerful multi-batch upload system that allows organizing complex performance capture sessions in a single, intuitive interface.
 -   **Supabase Integration:** All data, files, and user accounts are managed through a secure Supabase backend.
 -   **Light & Dark Modes:** Fully themed for both light and dark preferences.
@@ -27,10 +28,11 @@ The application is built with a modern tech stack, focusing on a minimalist, per
 ## Technology Stack
 
 -   **Frontend:** React, TypeScript, Vite
+-   **Backend:** Vercel Serverless Functions
 -   **Styling:** Tailwind CSS (via CDN)
 -   **Animation:** Framer Motion
 -   **Icons:** Lucide React
--   **Backend:** Supabase (PostgreSQL Database, Storage, Auth)
+-   **Database & Storage:** Supabase (PostgreSQL Database, Storage, Auth)
 
 ---
 
@@ -41,10 +43,11 @@ To run this project locally, you will need to set up a Supabase project and conf
 ### 1. Supabase Setup
 
 1.  **Create a Supabase Project:** Go to [supabase.com](https://supabase.com) and create a new project.
-2.  **Run the SQL Schema:** In your new project's SQL Editor, run the provided `schema.sql` script to create the necessary tables (`videos`, `categories`), policies (RLS), and functions.
+2.  **Run the SQL Schema:** In your new project's SQL Editor, run the provided `schema.sql` script to create the necessary tables (`videos`, `categories`, `generation_tasks`), policies (RLS), and functions.
 3.  **Create a Storage Bucket:** In the Storage section, create a new **public** bucket named `videos`.
 4.  **Set Bucket Policies:** Manually add policies to the `videos` bucket to allow `SELECT` for everyone (`anon`) and `INSERT`, `UPDATE`, `DELETE` for authenticated users.
-5.  **Create a User:** In the Authentication section, create at least one user for the application.
+5.  **Set Table Policies (RLS):** Ensure you have Row Level Security policies enabled for all tables (`videos`, `categories`, `generation_tasks`) that allow authenticated users to perform `SELECT`, `INSERT`, `UPDATE`, and `DELETE` operations.
+6.  **Create a User:** In the Authentication section, create at least one user for the application.
 
 ### 2. Local Environment Setup
 
@@ -65,13 +68,16 @@ To run this project locally, you will need to set up a Supabase project and conf
 
 4.  **Configure Environment Variables:**
     -   Create a new file in the root of the project named `.env.local`.
-    -   Go to your Supabase project's **Settings > API** page.
-    -   Copy your **Project URL** and **anon (public) key** and paste them into your `.env.local` file.
+    -   Go to your Supabase project's **Settings > API** page and get your URL and anon key.
+    -   Get your API key from your RunwayML account.
 
     ```
     # .env.local
     VITE_SUPABASE_URL="YOUR_SUPABASE_URL_HERE"
     VITE_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY_HERE"
+    
+    # This key is for the backend serverless function and is NOT exposed to the browser.
+    RUNWAY_API_KEY="YOUR_RUNWAY_API_KEY_HERE"
     ```
 
 5.  **Run the application:**
@@ -81,11 +87,14 @@ To run this project locally, you will need to set up a Supabase project and conf
     ```
     This will start the app on a local server (usually `http://localhost:5173`). Open this URL in your browser. The app will now automatically reload whenever you make changes to the code.
 
-### 3. Deployment
+### 3. Deployment (Vercel)
 
-The application is ready to be deployed on platforms like Vercel or Netlify.
+The application is ready to be deployed on Vercel.
 
 1.  Push your code to a GitHub repository.
-2.  Import the repository into your Vercel/Netlify account.
-3.  Add your Supabase `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` as environment variables in the deployment platform's settings.
-4.  Deploy!
+2.  Import the repository into your Vercel account.
+3.  Add your Supabase and Runway environment variables in the project's **Settings > Environment Variables** page.
+    -   `VITE_SUPABASE_URL`
+    -   `VITE_SUPABASE_ANON_KEY`
+    -   `RUNWAY_API_KEY`
+4.  Deploy! Vercel will automatically detect the `api` directory and deploy the serverless function.

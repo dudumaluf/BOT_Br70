@@ -6,6 +6,7 @@ import { PerformanceBatch, StagedSourceFile, StagedResultFile, GenerationTask, V
 import { ComboBox } from './ComboBox';
 import { supabase } from '../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
+import type { Database } from '../lib/database.types';
 
 // --- MANUAL UPLOAD COMPONENTS ---
 
@@ -168,23 +169,33 @@ const ManualUploader: React.FC<{
 
 // --- AI GENERATION COMPONENTS ---
 
-const runwayApi = {
-  startTask: (body: any) => fetch('https://api.dev.runwayml.com/v1/character_performance', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${(import.meta as any).env.VITE_RUNWAY_API_KEY}`,
-      'X-Runway-Version': '2024-11-06',
-    },
-    body: JSON.stringify(body),
-  }).then(res => res.json()),
-  getTaskStatus: (taskId: string) => fetch(`https://api.dev.runwayml.com/v1/tasks/${taskId}`, {
-    headers: {
-      'Authorization': `Bearer ${(import.meta as any).env.VITE_RUNWAY_API_KEY}`,
-      'X-Runway-Version': '2024-11-06',
+// Handles responses from our backend proxy, throwing an error if the response is not OK.
+const handleApiResponse = async (res: Response) => {
+    if (!res.ok) {
+        // Try to parse error details from the response body, otherwise fall back to status text.
+        const errorBody = await res.json().catch(() => ({ error: `Request failed with status: ${res.status} ${res.statusText}` }));
+        throw new Error(errorBody.error || `HTTP error! status: ${res.status}`);
     }
-  }).then(res => res.json())
-}
+    // For DELETE requests that return 204 No Content, res.json() will fail.
+    if (res.status === 204) {
+        return null;
+    }
+    return res.json();
+};
+
+// API object to interact with our own backend proxy, not RunwayML directly.
+const runwayApi = {
+  startTask: (body: any) => fetch('/api/runway', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).then(handleApiResponse),
+
+  getTaskStatus: (taskId: string) => fetch(`/api/runway?taskId=${taskId}`, {
+    method: 'GET',
+  }).then(handleApiResponse)
+};
+
 
 const SingleFileInput: React.FC<{onFileChange: (file: File | null) => void; label: string; file: File | null; accept: string}> = ({onFileChange, label, file, accept}) => {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -316,20 +327,22 @@ const AiGenerator: React.FC<{
         for (const task of tasksToPoll) {
           if (!task.runway_task_id) continue;
           try {
-            const runwayTask = await runwayApi.getTaskStatus(task.runway_task_id);
+            const runwayTask: any = await runwayApi.getTaskStatus(task.runway_task_id);
             if (task.status.toLowerCase() !== runwayTask.status) {
-              const { error } = await supabase.from('generation_tasks').update({ 
-                status: runwayTask.status.toUpperCase(), 
+              const updatePayload: Database['public']['Tables']['generation_tasks']['Update'] = {
+                status: runwayTask.status.toUpperCase(),
                 output_video_url: runwayTask.output?.uri || null,
                 error_message: runwayTask.error || null,
-              }).eq('id', task.id);
+              };
+              const { error } = await supabase.from('generation_tasks').update(updatePayload).eq('id', task.id);
               if (!error) {
                 refreshData(); // Refresh data to get immediate UI update
               }
             }
           } catch (error: any) {
             console.error(`Error polling task ${task.id}:`, error);
-            await supabase.from('generation_tasks').update({ status: 'FAILED', error_message: error.message }).eq('id', task.id);
+            const updatePayload: Database['public']['Tables']['generation_tasks']['Update'] = { status: 'FAILED', error_message: error.message };
+            await supabase.from('generation_tasks').update(updatePayload).eq('id', task.id);
             refreshData();
           }
         }
@@ -376,7 +389,7 @@ const AiGenerator: React.FC<{
             ]);
 
             // 3. Start Runway task
-            const runwayResponse = await runwayApi.startTask({
+            const runwayResponse: any = await runwayApi.startTask({
                 character: { type: charAsset.type.startsWith('video') ? 'video' : 'image', uri: charUrl },
                 reference: { type: 'video', uri: refUrl },
                 ratio: initialMeta.ratio,

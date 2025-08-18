@@ -127,7 +127,7 @@ export const useAppData = (userId?: string) => {
         
         if (newCategories.size > 0) {
             const categoriesToInsert = Array.from(newCategories.values());
-            const { error: catError } = await supabase.from('categories').insert(categoriesToInsert);
+            const { error: catError } = await supabase.from('categories').insert(categoriesToInsert as Database['public']['Tables']['categories']['Insert'][]);
             if (catError) throw catError;
         }
 
@@ -138,7 +138,7 @@ export const useAppData = (userId?: string) => {
             return { ...asset, video_url: data.publicUrl };
         }));
 
-        const { error: insertError } = await supabase.from('videos').insert(assetsWithUrls as any);
+        const { error: insertError } = await supabase.from('videos').insert(assetsWithUrls as Database['public']['Tables']['videos']['Insert'][]);
         if (insertError) throw insertError;
         
         await fetchAllData();
@@ -193,7 +193,7 @@ export const useAppData = (userId?: string) => {
         const { id, created_at, file_path, video_url, ...updateData } = updatedAsset;
         setAssets(prev => prev.map(a => a.id === id ? updatedAsset : a));
 
-        const { error } = await supabase.from('videos').update(updateData).eq('id', id);
+        const { error } = await supabase.from('videos').update(updateData as Database['public']['Tables']['videos']['Update']).eq('id', id);
         if (error) throw error;
     } catch(error) {
         console.error("Error updating asset:", error);
@@ -209,7 +209,7 @@ export const useAppData = (userId?: string) => {
     
     const { error } = await supabase
       .from('videos')
-      .update({ is_favorite: !asset.is_favorite })
+      .update({ is_favorite: !asset.is_favorite } as Database['public']['Tables']['videos']['Update'])
       .eq('id', assetId);
 
     if (error) {
@@ -220,7 +220,7 @@ export const useAppData = (userId?: string) => {
 
   // Generation Task Management
   const createGenerationTask = useCallback(async (taskData: Omit<GenerationTask, 'id' | 'created_at'>) => {
-    const { data, error } = await supabase.from('generation_tasks').insert([taskData]).select().single();
+    const { data, error } = await supabase.from('generation_tasks').insert([taskData] as Database['public']['Tables']['generation_tasks']['Insert'][]).select().single();
     if (error) {
       console.error('Error creating generation task:', error);
       return null;
@@ -234,26 +234,29 @@ export const useAppData = (userId?: string) => {
     const taskToDelete = generationTasks.find(t => t.id === taskId);
     setGenerationTasks(prev => prev.filter(t => t.id !== taskId));
     
+    // Attempt to cancel the task on Runway's end via our backend proxy
     if (taskToDelete?.runway_task_id && (taskToDelete.status === 'PENDING' || taskToDelete.status === 'RUNNING')) {
       try {
-        await fetch(`https://api.dev.runwayml.com/v1/tasks/${taskToDelete.runway_task_id}`, {
+        const response = await fetch(`/api/runway?taskId=${taskToDelete.runway_task_id}`, {
           method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${(import.meta as any).env.VITE_RUNWAY_API_KEY}`,
-            'X-Runway-Version': '2024-11-06',
-          }
         });
+        // Runway API returns 404 if the task is already completed/deleted, which is not an error for us.
+        if (!response.ok && response.status !== 404) {
+            console.warn(`Failed to cancel Runway task ${taskToDelete.runway_task_id}. Status: ${response.status}`);
+        }
       } catch (e) {
-        console.warn("Could not cancel Runway task, it may have already completed or been deleted.", e);
+        console.error("Error calling backend to cancel Runway task:", e);
       }
     }
     
+    // Delete the task from our database
     const { error } = await supabase.from('generation_tasks').delete().eq('id', taskId);
     if (error) {
-      console.error('Error deleting generation task:', error);
-      fetchAllData(); // Revert on error
+      console.error('Error deleting generation task from DB:', error);
+      fetchAllData(); // Revert UI on error
     }
 
+    // Clean up associated files from storage
     const pathsToDelete = [taskToDelete?.input_character_url, taskToDelete?.input_reference_video_url]
       .filter(Boolean)
       .map(url => new URL(url as string).pathname.split('/videos/')[1]);
@@ -306,7 +309,7 @@ export const useAppData = (userId?: string) => {
         is_favorite: false,
       };
       
-      const { error: insertError } = await supabase.from('videos').insert([newAssetData]);
+      const { error: insertError } = await supabase.from('videos').insert([newAssetData] as Database['public']['Tables']['videos']['Insert'][]);
       if (insertError) throw insertError;
       
       // 5. Delete the completed task and refresh data
@@ -321,7 +324,7 @@ export const useAppData = (userId?: string) => {
   const addCategoryItem = useCallback(async (category: CategoryType, name: string) => {
     if (!name || name.trim() === '' || !userId) return;
     try {
-        const { data, error } = await supabase.from('categories').insert([{ type: category, name }]).select();
+        const { data, error } = await supabase.from('categories').insert([{ type: category, name }] as Database['public']['Tables']['categories']['Insert'][]).select();
         if (error) throw error;
         if (data) {
             setCategories(prev => [...prev, ...(data as any[])].sort((a,b) => a.name.localeCompare(b.name)));
@@ -340,7 +343,7 @@ export const useAppData = (userId?: string) => {
     }
     
     try {
-        const { error: catError } = await supabase.from('categories').update({ name: newName }).eq('id', categoryToRename.id);
+        const { error: catError } = await supabase.from('categories').update({ name: newName } as Database['public']['Tables']['categories']['Update']).eq('id', categoryToRename.id);
         if (catError) throw catError;
 
         const keyMap: Record<CategoryType, 'actor_name' | 'movement_type' | 'performance_actor'> = {
